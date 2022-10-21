@@ -1,4 +1,5 @@
-use crate::renderer::{color, Renderer};
+use crate::renderer::{color, RenderContext, Renderer};
+use cgmath::Vector2;
 use winit::dpi::LogicalSize;
 use winit::event::{ElementState, Event, KeyboardInput, VirtualKeyCode, WindowEvent};
 use winit::event_loop::{ControlFlow, EventLoop};
@@ -13,192 +14,147 @@ const BALL_VELOCITY: i32 = 3;
 const PALETTE_SIZE: i32 = 4 * BALL_SIZE;
 const POINTS_SIZE: i32 = 12;
 const POINTS_MARGIN: i32 = 6;
+const TOLERANCE: i32 = BALL_VELOCITY;
 
-#[derive(Debug)]
-struct State {
-    palette_1_position: cgmath::Vector2<i32>,
-    q_pressed: bool,
-    a_pressed: bool,
-    palette_1_points: u32,
-
-    palette_2_position: cgmath::Vector2<i32>,
-    o_pressed: bool,
-    l_pressed: bool,
-    palette_2_points: u32,
-
-    ball_position: cgmath::Vector2<i32>,
-    ball_velocity: cgmath::Vector2<i32>,
+#[derive(Debug, Copy, Clone)]
+struct Bounds {
+    origin: Vector2<i32>,
+    size: Vector2<i32>,
 }
 
-impl State {
-    fn new() -> State {
-        State {
-            palette_1_position: (BALL_SIZE, (600 - PALETTE_SIZE) / 2).into(),
-            q_pressed: false,
-            a_pressed: false,
-            palette_1_points: 0,
+#[derive(Debug, Copy, Clone)]
+enum Side {
+    Left,
+    Right,
+}
 
-            palette_2_position: (800 - BALL_SIZE * 2, (600 - PALETTE_SIZE) / 2).into(),
-            o_pressed: false,
-            l_pressed: false,
-            palette_2_points: 0,
+#[derive(Debug)]
+struct Palette {
+    position: Vector2<i32>,
+    side: Side,
 
-            ball_position: (400 - BALL_SIZE / 2, 300 - BALL_SIZE / 2).into(),
-            ball_velocity: (BALL_VELOCITY, BALL_VELOCITY).into(),
-        }
-    }
+    up_button: VirtualKeyCode,
+    down_button: VirtualKeyCode,
 
+    up_button_pressed: bool,
+    down_button_pressed: bool,
+}
+
+impl Palette {
     fn update(&mut self) {
-        let palette_1_translation = match (self.q_pressed, self.a_pressed) {
+        let translation = match (self.up_button_pressed, self.down_button_pressed) {
             (true, _) => (0, PALETTE_VELOCITY).into(),
             (_, true) => (0, -PALETTE_VELOCITY).into(),
             (false, false) => (0, 0).into(),
         };
-        self.palette_1_position += palette_1_translation;
-
-        let palette_2_translation = match (self.o_pressed, self.l_pressed) {
-            (true, _) => (0, PALETTE_VELOCITY).into(),
-            (_, true) => (0, -PALETTE_VELOCITY).into(),
-            (false, false) => (0, 0).into(),
-        };
-        self.palette_2_position += palette_2_translation;
-
-        self.ball_position += self.ball_velocity;
-        if self.ball_position.y <= 0 || self.ball_position.y >= (600 - BALL_SIZE) {
-            self.ball_velocity.y = -self.ball_velocity.y
-        }
-
-        let left_boud = 2 * BALL_SIZE;
-        if self.ball_position.x <= left_boud
-            && self.ball_position.y >= left_boud - BALL_VELOCITY
-            && self.ball_position.y >= self.palette_1_position.y - BALL_SIZE
-            && self.ball_position.y <= self.palette_1_position.y + PALETTE_SIZE
-        {
-            self.ball_velocity.x = -self.ball_velocity.x
-        }
-
-        let right_bound = 800 - 3 * BALL_SIZE;
-        if self.ball_position.x >= right_bound
-            && self.ball_position.x <= right_bound + BALL_VELOCITY
-            && self.ball_position.y >= self.palette_2_position.y - BALL_SIZE
-            && self.ball_position.y <= self.palette_2_position.y + PALETTE_SIZE
-        {
-            self.ball_velocity.x = -self.ball_velocity.x
-        }
-
-        if self.ball_position.x < -BALL_SIZE {
-            self.ball_position = (400 - BALL_SIZE / 2, 300 - BALL_SIZE / 2).into();
-            self.palette_1_position.y = (600 - PALETTE_SIZE) / 2;
-            self.palette_2_position.y = (600 - PALETTE_SIZE) / 2;
-            self.palette_2_points += 1;
-        }
-
-        if self.ball_position.x > 800 {
-            self.ball_position = (400 - BALL_SIZE / 2, 300 - BALL_SIZE / 2).into();
-            self.palette_1_position.y = (600 - PALETTE_SIZE) / 2;
-            self.palette_2_position.y = (600 - PALETTE_SIZE) / 2;
-            self.palette_1_points += 1;
-        }
+        self.position += translation;
     }
 
     fn input(&mut self, event: &WindowEvent) -> bool {
         match event {
             WindowEvent::KeyboardInput { input, .. } => match input {
                 KeyboardInput {
-                    state: ElementState::Pressed,
-                    virtual_keycode: Some(VirtualKeyCode::Q),
+                    virtual_keycode,
+                    state,
                     ..
                 } => {
-                    self.q_pressed = true;
-                    true
+                    if virtual_keycode == &Some(self.up_button) {
+                        self.up_button_pressed = match state {
+                            ElementState::Pressed => true,
+                            ElementState::Released => false,
+                        };
+                        true
+                    } else if virtual_keycode == &Some(self.down_button) {
+                        self.down_button_pressed = match state {
+                            ElementState::Pressed => true,
+                            ElementState::Released => false,
+                        };
+                        true
+                    } else {
+                        false
+                    }
                 }
-                KeyboardInput {
-                    state: ElementState::Released,
-                    virtual_keycode: Some(VirtualKeyCode::Q),
-                    ..
-                } => {
-                    self.q_pressed = false;
-                    true
-                }
-                KeyboardInput {
-                    state: ElementState::Pressed,
-                    virtual_keycode: Some(VirtualKeyCode::A),
-                    ..
-                } => {
-                    self.a_pressed = true;
-                    true
-                }
-                KeyboardInput {
-                    state: ElementState::Released,
-                    virtual_keycode: Some(VirtualKeyCode::A),
-                    ..
-                } => {
-                    self.a_pressed = false;
-                    true
-                }
-                KeyboardInput {
-                    state: ElementState::Pressed,
-                    virtual_keycode: Some(VirtualKeyCode::O),
-                    ..
-                } => {
-                    self.o_pressed = true;
-                    true
-                }
-                KeyboardInput {
-                    state: ElementState::Released,
-                    virtual_keycode: Some(VirtualKeyCode::O),
-                    ..
-                } => {
-                    self.o_pressed = false;
-                    true
-                }
-                KeyboardInput {
-                    state: ElementState::Pressed,
-                    virtual_keycode: Some(VirtualKeyCode::L),
-                    ..
-                } => {
-                    self.l_pressed = true;
-                    true
-                }
-                KeyboardInput {
-                    state: ElementState::Released,
-                    virtual_keycode: Some(VirtualKeyCode::L),
-                    ..
-                } => {
-                    self.l_pressed = false;
-                    true
-                }
-                _ => false,
             },
             _ => false,
         }
     }
 
-    fn render(&self, ctx: &mut renderer::RenderContext) {
-        // ball
+    fn render(&self, ctx: &mut RenderContext) {
         ctx.draw_rect(
-            self.ball_position.x,
-            self.ball_position.y,
-            BALL_SIZE as u32,
-            BALL_SIZE as u32,
-        );
-
-        // palettes
-        ctx.draw_rect(
-            self.palette_1_position.x,
-            self.palette_1_position.y,
+            self.position.x,
+            self.position.y,
             BALL_SIZE as u32,
             PALETTE_SIZE as u32,
         );
-        ctx.draw_rect(
-            self.palette_2_position.x,
-            self.palette_2_position.y,
-            BALL_SIZE as u32,
-            PALETTE_SIZE as u32,
-        );
+    }
 
-        for i in 0..self.palette_1_points {
-            let x = POINTS_SIZE + (i as i32) * (POINTS_SIZE + POINTS_MARGIN);
+    fn overlap(&self, bounds: Bounds) -> bool {
+        let horizontal_overlap = match self.side {
+            Side::Left => {
+                let collision_line = self.position.x + BALL_SIZE;
+                let origin = bounds.origin.x;
+                origin <= collision_line && origin >= collision_line - TOLERANCE
+            }
+            Side::Right => {
+                let collision_line = self.position.x;
+                let origin = (bounds.origin.x + bounds.size.x);
+                origin >= collision_line && origin <= collision_line + TOLERANCE
+            }
+        };
+        let vertical_overlap = bounds.origin.y >= self.position.y - BALL_SIZE
+            && bounds.origin.y <= self.position.y + PALETTE_SIZE;
+        horizontal_overlap && vertical_overlap
+    }
+
+    fn restart(&mut self) {
+        self.position.y = (600 - PALETTE_SIZE) / 2
+    }
+}
+
+#[derive(Debug)]
+struct Player {
+    palette: Palette,
+    score: u32,
+    side: Side,
+}
+
+impl Player {
+    fn new(side: Side) -> Player {
+        let x_palette_position = match side {
+            Side::Left => BALL_SIZE,
+            Side::Right => 800 - BALL_SIZE * 2,
+        };
+        let up_button = match side {
+            Side::Left => VirtualKeyCode::Q,
+            Side::Right => VirtualKeyCode::O,
+        };
+        let down_button = match side {
+            Side::Left => VirtualKeyCode::A,
+            Side::Right => VirtualKeyCode::L,
+        };
+
+        Player {
+            side,
+            score: 0,
+            palette: Palette {
+                position: (x_palette_position, (600 - PALETTE_SIZE) / 2).into(),
+                side,
+                up_button,
+                down_button,
+                up_button_pressed: false,
+                down_button_pressed: false,
+            },
+        }
+    }
+
+    fn render(&self, ctx: &mut RenderContext) {
+        self.palette.render(ctx);
+
+        for i in 0..self.score {
+            let x = match self.side {
+                Side::Left => POINTS_SIZE + (i as i32) * (POINTS_SIZE + POINTS_MARGIN),
+                Side::Right => 800 - (2 * POINTS_SIZE + (i as i32) * (POINTS_SIZE + POINTS_MARGIN)),
+            };
             ctx.draw_rect(
                 x,
                 600 - 2 * POINTS_SIZE,
@@ -206,15 +162,118 @@ impl State {
                 POINTS_SIZE as u32,
             );
         }
+    }
 
-        for i in 0..self.palette_2_points {
-            let x = 800 - (2 * POINTS_SIZE + (i as i32) * (POINTS_SIZE + POINTS_MARGIN));
-            ctx.draw_rect(
-                x,
-                600 - 2 * POINTS_SIZE,
-                POINTS_SIZE as u32,
-                POINTS_SIZE as u32,
-            );
+    fn should_score(&self, bounds: Bounds) -> bool {
+        match self.side {
+            Side::Left => bounds.origin.x > 800,
+            Side::Right => bounds.origin.x < -bounds.size.x,
+        }
+    }
+
+    fn score(&mut self) {
+        self.score += 1
+    }
+}
+
+#[derive(Debug)]
+struct Ball {
+    position: Vector2<i32>,
+    velocity: Vector2<i32>,
+}
+
+impl Ball {
+    fn new() -> Ball {
+        Ball {
+            position: (400 - BALL_SIZE / 2, 300 - BALL_SIZE / 2).into(),
+            velocity: (BALL_VELOCITY, BALL_VELOCITY).into(),
+        }
+    }
+
+    fn bounds(&self) -> Bounds {
+        Bounds {
+            origin: self.position,
+            size: (BALL_SIZE, BALL_SIZE).into(),
+        }
+    }
+
+    fn update(&mut self) {
+        self.position += self.velocity;
+        if self.position.y <= 0 || self.position.y >= (600 - BALL_SIZE) {
+            self.velocity.y = -self.velocity.y
+        }
+    }
+
+    fn bounce_horizontally(&mut self) {
+        self.velocity.x = -self.velocity.x;
+    }
+
+    fn render(&self, ctx: &mut RenderContext) {
+        ctx.draw_rect(
+            self.position.x,
+            self.position.y,
+            BALL_SIZE as u32,
+            BALL_SIZE as u32,
+        );
+    }
+
+    fn restart(&mut self) {
+        self.position = (400 - BALL_SIZE / 2, 300 - BALL_SIZE / 2).into();
+    }
+}
+
+#[derive(Debug)]
+struct State {
+    players: [Player; 2],
+    ball: Ball,
+}
+
+impl State {
+    fn new() -> State {
+        State {
+            players: [Player::new(Side::Left), Player::new(Side::Right)],
+            ball: Ball::new(),
+        }
+    }
+
+    fn update(&mut self) {
+        self.ball.update();
+
+        let mut should_restart = false;
+        for player in &mut self.players {
+            player.palette.update();
+
+            if player.palette.overlap(self.ball.bounds()) {
+                self.ball.bounce_horizontally();
+            }
+
+            if player.should_score(self.ball.bounds()) {
+                player.score();
+                should_restart = true;
+            }
+        }
+        if should_restart {
+            self.restart();
+        }
+    }
+
+    fn input(&mut self, event: &WindowEvent) -> bool {
+        self.players.iter_mut().any(|p| p.palette.input(&event))
+    }
+
+    fn render(&self, ctx: &mut RenderContext) {
+        self.ball.render(ctx);
+
+        for player in &self.players {
+            player.render(ctx);
+        }
+    }
+
+    fn restart(&mut self) {
+        self.ball.restart();
+
+        for player in &mut self.players {
+            player.palette.restart()
         }
     }
 }
