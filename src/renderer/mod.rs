@@ -3,6 +3,7 @@ mod instances;
 mod pipeline;
 mod sprite_buffers;
 
+use cgmath::SquareMatrix;
 use pollster::FutureExt;
 use std::iter;
 use wgpu::util::DeviceExt;
@@ -12,6 +13,28 @@ use crate::renderer::color::Color;
 use crate::renderer::instances::{Instance, InstanceRaw};
 use crate::renderer::pipeline::Pipeline;
 use crate::renderer::sprite_buffers::SpriteBuffers;
+
+#[repr(C)]
+#[derive(Debug, Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
+struct CameraUniform {
+    view_proj_matrix: [[f32; 4]; 4],
+}
+
+impl CameraUniform {
+    fn from_screen_size(screen_size: cgmath::Vector2<u32>) -> CameraUniform {
+        let translation_matrix = cgmath::Matrix4::from_translation((-1.0, -1.0, 0.0).into());
+        let two_scale_matrix = cgmath::Matrix4::from_scale(2.0);
+        let res_scale_matrix = cgmath::Matrix4::from_nonuniform_scale(
+            1.0 / (screen_size.x as f32),
+            1.0 / (screen_size.y as f32),
+            1.0,
+        );
+        let matrix = translation_matrix * two_scale_matrix * res_scale_matrix;
+        CameraUniform {
+            view_proj_matrix: matrix.into(),
+        }
+    }
+}
 
 #[derive(Debug)]
 pub struct Renderer {
@@ -59,7 +82,8 @@ impl Renderer {
         surface.configure(&device, &config);
 
         let sprite_buffers = SpriteBuffers::create(&device, Some("Sprite"));
-        let pipeline = Pipeline::create(&device, config.format);
+        let screen_size = (config.width, config.height).into();
+        let pipeline = Pipeline::create(&device, config.format, screen_size);
 
         Renderer {
             device,
@@ -110,10 +134,10 @@ impl<'a> RenderContext<'a> {
         self.clear_color = color
     }
 
-    pub fn draw_rect(&mut self, x: f32, y: f32, w: f32, h: f32) {
+    pub fn draw_rect(&mut self, x: i32, y: i32, w: u32, h: u32) {
         self.instances.push(Instance {
-            position: (x, y).into(),
-            size: (w, h).into(),
+            position: (x as f32, y as f32).into(),
+            size: (w as f32, h as f32).into(),
         })
     }
 
@@ -148,6 +172,7 @@ impl<'a> RenderContext<'a> {
             depth_stencil_attachment: None,
         });
         render_pass.set_pipeline(&self.renderer.pipeline.pipeline);
+        render_pass.set_bind_group(0, &self.renderer.pipeline.camera_bind_group, &[]);
         render_pass.set_vertex_buffer(0, self.renderer.sprite_buffers.vertex.slice(..));
         render_pass.set_vertex_buffer(1, instances_buffer.slice(..));
         render_pass.set_index_buffer(

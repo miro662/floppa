@@ -1,22 +1,60 @@
+use crate::renderer::CameraUniform;
+use cgmath::Vector2;
 use std::mem;
 use wgpu::include_wgsl;
+use wgpu::util::DeviceExt;
 
 #[derive(Debug)]
 pub(in crate::renderer) struct Pipeline {
     pub(in crate::renderer) pipeline: wgpu::RenderPipeline,
+    pub(in crate::renderer) camera_bind_group: wgpu::BindGroup,
 }
 
 impl Pipeline {
     pub(in crate::renderer) fn create(
         device: &wgpu::Device,
         target_format: wgpu::TextureFormat,
+        screen_size: Vector2<u32>,
     ) -> Pipeline {
         let shader_descriptor = include_wgsl!("shader.wgsl");
         let shader = device.create_shader_module(shader_descriptor);
 
+        let mut camera_uniforms = [CameraUniform::from_screen_size(screen_size)];
+        println!("{:?}", camera_uniforms);
+        let camera_buffer_description = wgpu::util::BufferInitDescriptor {
+            label: Some("Camera buffer"),
+            contents: bytemuck::cast_slice(&camera_uniforms),
+            usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+        };
+        let camera_buffer = device.create_buffer_init(&camera_buffer_description);
+
+        let camera_bind_group_layout =
+            device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+                entries: &[wgpu::BindGroupLayoutEntry {
+                    binding: 0,
+                    visibility: wgpu::ShaderStages::VERTEX,
+                    ty: wgpu::BindingType::Buffer {
+                        ty: wgpu::BufferBindingType::Uniform,
+                        has_dynamic_offset: false,
+                        min_binding_size: None,
+                    },
+                    count: None,
+                }],
+                label: Some("camera_bind_group_layout"),
+            });
+        let camera_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+            layout: &camera_bind_group_layout,
+            entries: &[wgpu::BindGroupEntry {
+                binding: 0,
+                resource: camera_buffer.as_entire_binding(),
+            }],
+            label: Some("camera_bind_group"),
+        });
+
+        let bind_group_layouts = [&camera_bind_group_layout];
         let layout_descriptor = wgpu::PipelineLayoutDescriptor {
             label: Some("Pipeline layout"),
-            bind_group_layouts: &[],
+            bind_group_layouts: &bind_group_layouts,
             push_constant_ranges: &[],
         };
         let layout = device.create_pipeline_layout(&layout_descriptor);
@@ -70,6 +108,9 @@ impl Pipeline {
             multiview: None,
         };
         let pipeline = device.create_render_pipeline(&pipeline_descriptor);
-        Pipeline { pipeline }
+        Pipeline {
+            pipeline,
+            camera_bind_group,
+        }
     }
 }
