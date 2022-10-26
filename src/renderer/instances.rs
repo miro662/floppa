@@ -1,4 +1,4 @@
-use cgmath::{Matrix3, SquareMatrix};
+use cgmath::Matrix3;
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub(in crate::renderer) struct Instance {

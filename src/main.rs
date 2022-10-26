@@ -1,4 +1,4 @@
-use crate::renderer::{color, RenderContext, Renderer};
+use crate::renderer::{RenderContext, Renderer};
 use cgmath::Vector2;
 use rand::prelude::*;
 use winit::dpi::LogicalSize;
@@ -105,7 +105,7 @@ impl Palette {
             }
             Side::Right => {
                 let collision_line = self.position.x;
-                let origin = (bounds.origin.x + bounds.size.x);
+                let origin = bounds.origin.x + bounds.size.x;
                 origin >= collision_line && origin <= collision_line + TOLERANCE
             }
         };
@@ -332,7 +332,7 @@ fn main() {
         Event::RedrawRequested(window_id) if window_id == window.id() => {
             let time_now = chrono::Utc::now();
             duration = duration + (time_now - last_frame_finished);
-            while (duration >= step_duration) {
+            while duration >= step_duration {
                 state.update();
                 duration = duration - step_duration;
             }

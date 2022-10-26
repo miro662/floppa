@@ -2,6 +2,7 @@ pub mod color;
 mod instances;
 mod pipeline;
 mod sprite_buffers;
+mod camera;
 
 use cgmath::Vector2;
 use image::io::Reader as ImageReader;
@@ -11,33 +12,12 @@ use std::error::Error;
 use std::iter;
 use wgpu::util::DeviceExt;
 use winit::window::Window;
+use crate::renderer::camera::Camera;
 
 use crate::renderer::color::Color;
-use crate::renderer::instances::{Instance, InstanceRaw};
+use crate::renderer::instances::Instance;
 use crate::renderer::pipeline::Pipeline;
 use crate::renderer::sprite_buffers::SpriteBuffers;
-
-#[repr(C)]
-#[derive(Debug, Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
-struct CameraUniform {
-    view_proj_matrix: [[f32; 4]; 4],
-}
-
-impl CameraUniform {
-    fn from_screen_size(screen_size: cgmath::Vector2<u32>) -> CameraUniform {
-        let translation_matrix = cgmath::Matrix4::from_translation((-1.0, -1.0, 0.0).into());
-        let two_scale_matrix = cgmath::Matrix4::from_scale(2.0);
-        let res_scale_matrix = cgmath::Matrix4::from_nonuniform_scale(
-            1.0 / (screen_size.x as f32),
-            1.0 / (screen_size.y as f32),
-            1.0,
-        );
-        let matrix = translation_matrix * two_scale_matrix * res_scale_matrix;
-        CameraUniform {
-            view_proj_matrix: matrix.into(),
-        }
-    }
-}
 
 #[derive(Debug)]
 struct Texture {
@@ -52,6 +32,7 @@ pub struct Renderer {
     target_surface: wgpu::Surface,
     sprite_buffers: SpriteBuffers,
     pipeline: Pipeline,
+    camera: Camera,
     textures: Vec<Texture>,
 }
 
@@ -93,7 +74,8 @@ impl Renderer {
 
         let sprite_buffers = SpriteBuffers::create(&device, Some("Sprite"));
         let screen_size = (config.width, config.height).into();
-        let pipeline = Pipeline::create(&device, config.format, screen_size);
+        let pipeline = Pipeline::create(&device, config.format);
+        let camera = Camera::new(&device, screen_size, &pipeline.bind_group_layouts.camera);
 
         Renderer {
             device,
@@ -102,6 +84,7 @@ impl Renderer {
             sprite_buffers,
             pipeline,
             textures: vec![],
+            camera
         }
     }
 
@@ -164,7 +147,7 @@ impl Renderer {
         });
 
         let bind_group = self.device.create_bind_group(&wgpu::BindGroupDescriptor {
-            layout: &self.pipeline.texture_bind_group_layout,
+            layout: &self.pipeline.bind_group_layouts.texture,
             entries: &[
                 wgpu::BindGroupEntry {
                     binding: 0,
@@ -247,14 +230,14 @@ impl<'a> RenderContext<'a> {
     fn render_pass(&self, view: &wgpu::TextureView, encoder: &mut wgpu::CommandEncoder) {
         for texture_id in 0..self.renderer.textures.len() {
             let (instances_buffer, no_of_instances) = self.get_instances_buffer(texture_id);
-            if (no_of_instances > 0) {
+            if no_of_instances > 0 {
                 let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                     label: Some("Example render pass"),
                     color_attachments: &[Some(wgpu::RenderPassColorAttachment {
                         view: &view,
                         resolve_target: None,
                         ops: wgpu::Operations {
-                            load: if (texture_id == 0) {
+                            load: if texture_id == 0 {
                                 wgpu::LoadOp::Clear(self.clear_color.into())
                             } else {
                                 wgpu::LoadOp::Load
@@ -265,7 +248,7 @@ impl<'a> RenderContext<'a> {
                     depth_stencil_attachment: None,
                 });
                 render_pass.set_pipeline(&self.renderer.pipeline.pipeline);
-                render_pass.set_bind_group(0, &self.renderer.pipeline.camera_bind_group, &[]);
+                render_pass.set_bind_group(0, &self.renderer.camera.bind_group, &[]);
                 render_pass.set_bind_group(1, &self.renderer.textures[texture_id].bind_group, &[]);
                 render_pass.set_vertex_buffer(0, self.renderer.sprite_buffers.vertex.slice(..));
                 render_pass.set_vertex_buffer(1, instances_buffer.slice(..));

@@ -1,5 +1,3 @@
-use winit::window::CursorIcon::Default;
-
 #[derive(Debug, Default, Copy, Clone, PartialEq)]
 pub struct Color {
     pub r: f64,
@@ -30,30 +28,35 @@ impl From<Color> for wgpu::Color {
     }
 }
 
+#[allow(dead_code)]
 pub const RED: Color = Color {
     r: 1.0,
     g: 0.0,
     b: 0.0,
     a: 1.0,
 };
+#[allow(dead_code)]
 pub const GREEN: Color = Color {
     r: 0.0,
     g: 1.0,
     b: 0.0,
     a: 1.0,
 };
+#[allow(dead_code)]
 pub const BLUE: Color = Color {
     r: 0.0,
     g: 0.0,
     b: 1.0,
     a: 1.0,
 };
+#[allow(dead_code)]
 pub const WHITE: Color = Color {
     r: 1.0,
     g: 1.0,
     b: 1.0,
     a: 1.0,
 };
+#[allow(dead_code)]
 pub const BLACK: Color = Color {
     r: 0.0,
     g: 0.0,
