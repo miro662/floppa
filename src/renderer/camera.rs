@@ -22,14 +22,17 @@ impl CameraUniform {
     }
 }
 
-
 #[derive(Debug)]
 pub struct Camera {
-    pub bind_group: wgpu::BindGroup
+    pub bind_group: wgpu::BindGroup,
 }
 
 impl Camera {
-    pub fn new(device: &wgpu::Device, screen_size: cgmath::Vector2<u32>, layout: &wgpu::BindGroupLayout) -> Camera {
+    pub fn new(
+        device: &wgpu::Device,
+        screen_size: cgmath::Vector2<u32>,
+        layout: &wgpu::BindGroupLayout,
+    ) -> Camera {
         let camera_uniforms = [CameraUniform::from_screen_size(screen_size)];
 
         let camera_buffer_description = wgpu::util::BufferInitDescriptor {
@@ -48,7 +51,8 @@ impl Camera {
             label: Some("camera_bind_group"),
         });
 
-        Camera {bind_group: camera_bind_group}
+        Camera {
+            bind_group: camera_bind_group,
+        }
     }
-
 }

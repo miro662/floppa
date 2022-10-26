@@ -1,29 +1,21 @@
+mod camera;
 pub mod color;
 mod instances;
 mod pipeline;
 mod sprite_buffers;
-mod camera;
+mod texture;
 
-use cgmath::Vector2;
-use image::io::Reader as ImageReader;
-use image::GenericImageView;
+use crate::renderer::camera::Camera;
 use pollster::FutureExt;
-use std::error::Error;
 use std::iter;
 use wgpu::util::DeviceExt;
 use winit::window::Window;
-use crate::renderer::camera::Camera;
 
 use crate::renderer::color::Color;
 use crate::renderer::instances::Instance;
 use crate::renderer::pipeline::Pipeline;
 use crate::renderer::sprite_buffers::SpriteBuffers;
-
-#[derive(Debug)]
-struct Texture {
-    bind_group: wgpu::BindGroup,
-    size: Vector2<u32>,
-}
+use crate::renderer::texture::Texture;
 
 #[derive(Debug)]
 pub struct Renderer {
@@ -84,7 +76,7 @@ impl Renderer {
             sprite_buffers,
             pipeline,
             textures: vec![],
-            camera
+            camera,
         }
     }
 
@@ -98,74 +90,15 @@ impl Renderer {
         ctx.render();
     }
 
-    pub fn load_texture(&mut self, file_path: &str) -> Result<usize, Box<dyn Error>> {
-        let image = ImageReader::open(file_path)?.decode()?;
-        let image_rgba = image.to_rgba8();
-        let dimensions = image.dimensions();
-
-        let texture_size = wgpu::Extent3d {
-            width: dimensions.0,
-            height: dimensions.1,
-            depth_or_array_layers: 1,
-        };
-        let texture_descriptor = wgpu::TextureDescriptor {
-            size: texture_size,
-            mip_level_count: 1,
-            sample_count: 1,
-            dimension: wgpu::TextureDimension::D2,
-            format: wgpu::TextureFormat::Rgba8UnormSrgb,
-            usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST,
-            label: Some("texture"),
-        };
-        let texture = self.device.create_texture(&texture_descriptor);
-
-        self.queue.write_texture(
-            wgpu::ImageCopyTexture {
-                texture: &texture,
-                mip_level: 0,
-                origin: wgpu::Origin3d::ZERO,
-                aspect: wgpu::TextureAspect::All,
-            },
-            &image_rgba,
-            wgpu::ImageDataLayout {
-                offset: 0,
-                bytes_per_row: std::num::NonZeroU32::new(4 * dimensions.0),
-                rows_per_image: std::num::NonZeroU32::new(dimensions.1),
-            },
-            texture_size,
+    pub fn load_texture(&mut self, file_path: &str) -> usize {
+        let texture = Texture::load_from_file(
+            file_path,
+            &self.device,
+            &self.queue,
+            &self.pipeline.bind_group_layouts.texture,
         );
-
-        let texture_view = texture.create_view(&wgpu::TextureViewDescriptor::default());
-        let texture_sampler = self.device.create_sampler(&wgpu::SamplerDescriptor {
-            address_mode_u: wgpu::AddressMode::ClampToEdge,
-            address_mode_v: wgpu::AddressMode::ClampToEdge,
-            address_mode_w: wgpu::AddressMode::ClampToEdge,
-            mag_filter: wgpu::FilterMode::Nearest,
-            min_filter: wgpu::FilterMode::Nearest,
-            mipmap_filter: wgpu::FilterMode::Nearest,
-            ..Default::default()
-        });
-
-        let bind_group = self.device.create_bind_group(&wgpu::BindGroupDescriptor {
-            layout: &self.pipeline.bind_group_layouts.texture,
-            entries: &[
-                wgpu::BindGroupEntry {
-                    binding: 0,
-                    resource: wgpu::BindingResource::TextureView(&texture_view),
-                },
-                wgpu::BindGroupEntry {
-                    binding: 1,
-                    resource: wgpu::BindingResource::Sampler(&texture_sampler),
-                },
-            ],
-            label: Some("tbg"),
-        });
-
-        self.textures.push(Texture {
-            bind_group,
-            size: dimensions.into(),
-        });
-        Ok(self.textures.len() - 1)
+        self.textures.push(texture);
+        self.textures.len() - 1
     }
 }
 
