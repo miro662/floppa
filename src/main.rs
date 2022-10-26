@@ -1,4 +1,4 @@
-use crate::renderer::{RenderContext, Renderer};
+use crate::renderer::{RenderContext, Renderer, TextureID};
 use cgmath::Vector2;
 use rand::prelude::*;
 use winit::dpi::LogicalSize;
@@ -19,9 +19,9 @@ const TOLERANCE: i32 = BALL_VELOCITY;
 
 #[derive(Debug, Copy, Clone)]
 struct Textures {
-    ball: usize,
-    palette: usize,
-    point: usize,
+    ball: TextureID,
+    palette: TextureID,
+    point: TextureID,
 }
 
 #[derive(Debug, Copy, Clone)]
@@ -47,7 +47,7 @@ struct Palette {
     up_button_pressed: bool,
     down_button_pressed: bool,
 
-    texture: usize,
+    texture: TextureID,
 }
 
 impl Palette {
@@ -90,7 +90,7 @@ impl Palette {
     }
 
     fn render(&self, ctx: &mut RenderContext) {
-        ctx.draw_sprite(self.texture, self.position.x, self.position.y);
+        ctx.draw_sprite(self.texture, self.position);
     }
 
     fn overlap(&self, bounds: Bounds) -> bool {
@@ -121,7 +121,7 @@ struct Player {
     palette: Palette,
     score: u32,
     side: Side,
-    points_texture: usize,
+    points_texture: TextureID,
 }
 
 impl Player {
@@ -163,7 +163,7 @@ impl Player {
                 Side::Left => POINTS_SIZE + (i as i32) * (POINTS_SIZE + POINTS_MARGIN),
                 Side::Right => 800 - (2 * POINTS_SIZE + (i as i32) * (POINTS_SIZE + POINTS_MARGIN)),
             };
-            ctx.draw_sprite(self.points_texture, x, 600 - 2 * POINTS_SIZE);
+            ctx.draw_sprite(self.points_texture, (x, 600 - 2 * POINTS_SIZE).into());
         }
     }
 
@@ -184,11 +184,11 @@ struct Ball {
     position: Vector2<i32>,
     velocity: Vector2<i32>,
     rng: ThreadRng,
-    texture: usize,
+    texture: TextureID,
 }
 
 impl Ball {
-    fn new(texture: usize) -> Ball {
+    fn new(texture: TextureID) -> Ball {
         let mut rng = rand::thread_rng();
         let velocity = match rng.gen_range(0..=3) {
             0 => (BALL_VELOCITY, BALL_VELOCITY).into(),
@@ -229,7 +229,7 @@ impl Ball {
     }
 
     fn render(&self, ctx: &mut RenderContext) {
-        ctx.draw_sprite(self.texture, self.position.x, self.position.y);
+        ctx.draw_sprite(self.texture, self.position);
     }
 
     fn restart(&mut self) {

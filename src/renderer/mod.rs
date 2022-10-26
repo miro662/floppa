@@ -9,6 +9,7 @@ use crate::renderer::camera::Camera;
 use pollster::FutureExt;
 use std::iter;
 use wgpu::util::DeviceExt;
+use winit::window::CursorIcon::Text;
 use winit::window::Window;
 
 use crate::renderer::color::Color;
@@ -16,6 +17,9 @@ use crate::renderer::instances::Instance;
 use crate::renderer::pipeline::Pipeline;
 use crate::renderer::sprite_buffers::SpriteBuffers;
 use crate::renderer::texture::Texture;
+
+#[derive(Debug, Copy, Clone, Hash, Eq, PartialEq)]
+pub struct TextureID(usize);
 
 #[derive(Debug)]
 pub struct Renderer {
@@ -90,7 +94,7 @@ impl Renderer {
         ctx.render();
     }
 
-    pub fn load_texture(&mut self, file_path: &str) -> usize {
+    pub fn load_texture(&mut self, file_path: &str) -> TextureID {
         let texture = Texture::load_from_file(
             file_path,
             &self.device,
@@ -98,7 +102,7 @@ impl Renderer {
             &self.pipeline.bind_group_layouts.texture,
         );
         self.textures.push(texture);
-        self.textures.len() - 1
+        TextureID(self.textures.len() - 1)
     }
 }
 
@@ -131,16 +135,16 @@ impl<'a> RenderContext<'a> {
         self.clear_color = color
     }
 
-    pub fn draw_sprite(&mut self, texture_id: usize, x: i32, y: i32) {
-        let texture = &self.renderer.textures[texture_id];
+    pub fn draw_sprite(&mut self, texture_id: TextureID, position: cgmath::Vector2<i32>) {
+        let texture = &self.renderer.textures[texture_id.0];
         self.instances.push(Instance {
-            position: (x as f32, y as f32).into(),
+            position: (position.x as f32, position.y as f32).into(),
             size: (texture.size.x as f32, texture.size.y as f32).into(),
             texture: texture_id,
         })
     }
 
-    fn get_instances_buffer(&self, texture_id: usize) -> (wgpu::Buffer, usize) {
+    fn get_instances_buffer(&self, texture_id: TextureID) -> (wgpu::Buffer, usize) {
         let raw_instances = self
             .instances
             .iter()
@@ -161,7 +165,8 @@ impl<'a> RenderContext<'a> {
     }
 
     fn render_pass(&self, view: &wgpu::TextureView, encoder: &mut wgpu::CommandEncoder) {
-        for texture_id in 0..self.renderer.textures.len() {
+        for texture_id_num in 0..self.renderer.textures.len() {
+            let texture_id = TextureID(texture_id_num);
             let (instances_buffer, no_of_instances) = self.get_instances_buffer(texture_id);
             if no_of_instances > 0 {
                 let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
@@ -170,7 +175,7 @@ impl<'a> RenderContext<'a> {
                         view: &view,
                         resolve_target: None,
                         ops: wgpu::Operations {
-                            load: if texture_id == 0 {
+                            load: if texture_id_num == 0 {
                                 wgpu::LoadOp::Clear(self.clear_color.into())
                             } else {
                                 wgpu::LoadOp::Load
@@ -182,7 +187,11 @@ impl<'a> RenderContext<'a> {
                 });
                 render_pass.set_pipeline(&self.renderer.pipeline.pipeline);
                 render_pass.set_bind_group(0, &self.renderer.camera.bind_group, &[]);
-                render_pass.set_bind_group(1, &self.renderer.textures[texture_id].bind_group, &[]);
+                render_pass.set_bind_group(
+                    1,
+                    &self.renderer.textures[texture_id.0].bind_group,
+                    &[],
+                );
                 render_pass.set_vertex_buffer(0, self.renderer.sprite_buffers.vertex.slice(..));
                 render_pass.set_vertex_buffer(1, instances_buffer.slice(..));
                 render_pass.set_index_buffer(

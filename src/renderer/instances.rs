@@ -1,10 +1,11 @@
+use crate::renderer::TextureID;
 use cgmath::Matrix3;
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub(in crate::renderer) struct Instance {
     pub(in crate::renderer) position: cgmath::Vector2<f32>,
     pub(in crate::renderer) size: cgmath::Vector2<f32>,
-    pub(in crate::renderer) texture: usize,
+    pub(in crate::renderer) texture: TextureID,
 }
 
 impl Instance {
