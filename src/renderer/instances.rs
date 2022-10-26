@@ -1,3 +1,4 @@
+use crate::renderer::pass::PassDescriptor;
 use crate::renderer::TextureID;
 use cgmath::Matrix3;
 
@@ -16,6 +17,11 @@ impl Instance {
 
         InstanceRaw {
             matrix: matrix.into(),
+        }
+    }
+    pub(in crate::renderer) fn to_pass_descriptor(&self) -> PassDescriptor {
+        PassDescriptor {
+            texture_id: self.texture,
         }
     }
 }

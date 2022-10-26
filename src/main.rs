@@ -248,7 +248,6 @@ impl Ball {
 struct State {
     players: [Player; 2],
     ball: Ball,
-    textures: Textures,
 }
 
 impl State {
@@ -259,7 +258,6 @@ impl State {
                 Player::new(Side::Right, textures),
             ],
             ball: Ball::new(textures.ball),
-            textures,
         }
     }
 
