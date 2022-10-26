@@ -1,5 +1,6 @@
 use crate::renderer::{color, RenderContext, Renderer};
 use cgmath::Vector2;
+use rand::prelude::*;
 use winit::dpi::LogicalSize;
 use winit::event::{ElementState, Event, KeyboardInput, VirtualKeyCode, WindowEvent};
 use winit::event_loop::{ControlFlow, EventLoop};
@@ -15,6 +16,12 @@ const PALETTE_SIZE: i32 = 4 * BALL_SIZE;
 const POINTS_SIZE: i32 = 12;
 const POINTS_MARGIN: i32 = 6;
 const TOLERANCE: i32 = BALL_VELOCITY;
+
+#[derive(Debug)]
+struct Textures {
+    ball: usize,
+    palette: usize,
+}
 
 #[derive(Debug, Copy, Clone)]
 struct Bounds {
@@ -80,12 +87,13 @@ impl Palette {
     }
 
     fn render(&self, ctx: &mut RenderContext) {
-        ctx.draw_rect(
-            self.position.x,
-            self.position.y,
-            BALL_SIZE as u32,
-            PALETTE_SIZE as u32,
-        );
+        ctx.draw_sprite(1, self.position.x, self.position.y);
+        // ctx.draw_rect(
+        //     self.position.x,
+        //     self.position.y,
+        //     BALL_SIZE as u32,
+        //     PALETTE_SIZE as u32,
+        // );
     }
 
     fn overlap(&self, bounds: Bounds) -> bool {
@@ -155,12 +163,7 @@ impl Player {
                 Side::Left => POINTS_SIZE + (i as i32) * (POINTS_SIZE + POINTS_MARGIN),
                 Side::Right => 800 - (2 * POINTS_SIZE + (i as i32) * (POINTS_SIZE + POINTS_MARGIN)),
             };
-            ctx.draw_rect(
-                x,
-                600 - 2 * POINTS_SIZE,
-                POINTS_SIZE as u32,
-                POINTS_SIZE as u32,
-            );
+            ctx.draw_sprite(2, x, 600 - 2 * POINTS_SIZE);
         }
     }
 
@@ -180,13 +183,23 @@ impl Player {
 struct Ball {
     position: Vector2<i32>,
     velocity: Vector2<i32>,
+    rng: ThreadRng,
 }
 
 impl Ball {
     fn new() -> Ball {
+        let mut rng = rand::thread_rng();
+        let velocity = match rng.gen_range(0..=3) {
+            0 => (BALL_VELOCITY, BALL_VELOCITY).into(),
+            1 => (-BALL_VELOCITY, BALL_VELOCITY).into(),
+            2 => (-BALL_VELOCITY, -BALL_VELOCITY).into(),
+            3 => (BALL_VELOCITY, -BALL_VELOCITY).into(),
+            _ => unreachable!(),
+        };
         Ball {
             position: (400 - BALL_SIZE / 2, 300 - BALL_SIZE / 2).into(),
-            velocity: (BALL_VELOCITY, BALL_VELOCITY).into(),
+            velocity,
+            rng,
         }
     }
 
@@ -206,19 +219,32 @@ impl Ball {
 
     fn bounce_horizontally(&mut self) {
         self.velocity.x = -self.velocity.x;
+        match self.rng.gen_range(0..=1) {
+            0 => self.velocity.x += self.velocity.x.signum(),
+            1 => self.velocity.y += self.velocity.y.signum(),
+            _ => unreachable!(),
+        };
     }
 
     fn render(&self, ctx: &mut RenderContext) {
-        ctx.draw_rect(
-            self.position.x,
-            self.position.y,
-            BALL_SIZE as u32,
-            BALL_SIZE as u32,
-        );
+        ctx.draw_sprite(0, self.position.x, self.position.y);
+        // ctx.draw_rect(
+        //     self.position.x,
+        //     self.position.y,
+        //     BALL_SIZE as u32,
+        //     BALL_SIZE as u32,
+        // );
     }
 
     fn restart(&mut self) {
         self.position = (400 - BALL_SIZE / 2, 300 - BALL_SIZE / 2).into();
+        self.velocity = match self.rng.gen_range(0..=3) {
+            0 => (BALL_VELOCITY, BALL_VELOCITY).into(),
+            1 => (-BALL_VELOCITY, BALL_VELOCITY).into(),
+            2 => (-BALL_VELOCITY, -BALL_VELOCITY).into(),
+            3 => (BALL_VELOCITY, -BALL_VELOCITY).into(),
+            _ => unreachable!(),
+        };
     }
 }
 
@@ -285,6 +311,9 @@ fn main() {
     let window = Window::new(&ev_loop).unwrap();
     window.set_inner_size(LogicalSize::new(800, 600));
     let mut renderer = Renderer::new(&window);
+    renderer.load_texture("sprites/ball.png").unwrap();
+    renderer.load_texture("sprites/palette.png").unwrap();
+    renderer.load_texture("sprites/point.png").unwrap();
     let mut state = State::new();
 
     let mut last_frame_finished = chrono::Utc::now();

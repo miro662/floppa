@@ -8,6 +8,7 @@ use wgpu::util::DeviceExt;
 pub(in crate::renderer) struct Pipeline {
     pub(in crate::renderer) pipeline: wgpu::RenderPipeline,
     pub(in crate::renderer) camera_bind_group: wgpu::BindGroup,
+    pub(in crate::renderer) texture_bind_group_layout: wgpu::BindGroupLayout,
 }
 
 impl Pipeline {
@@ -51,7 +52,30 @@ impl Pipeline {
             label: Some("camera_bind_group"),
         });
 
-        let bind_group_layouts = [&camera_bind_group_layout];
+        let texture_bind_group_layout =
+            device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+                entries: &[
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 0,
+                        visibility: wgpu::ShaderStages::FRAGMENT,
+                        ty: wgpu::BindingType::Texture {
+                            multisampled: false,
+                            view_dimension: wgpu::TextureViewDimension::D2,
+                            sample_type: wgpu::TextureSampleType::Float { filterable: true },
+                        },
+                        count: None,
+                    },
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 1,
+                        visibility: wgpu::ShaderStages::FRAGMENT,
+                        ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
+                        count: None,
+                    },
+                ],
+                label: Some("tbgl"),
+            });
+
+        let bind_group_layouts = [&camera_bind_group_layout, &texture_bind_group_layout];
         let layout_descriptor = wgpu::PipelineLayoutDescriptor {
             label: Some("Pipeline layout"),
             bind_group_layouts: &bind_group_layouts,
@@ -109,6 +133,7 @@ impl Pipeline {
         };
         let pipeline = device.create_render_pipeline(&pipeline_descriptor);
         Pipeline {
+            texture_bind_group_layout,
             pipeline,
             camera_bind_group,
         }

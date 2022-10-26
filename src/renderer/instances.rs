@@ -4,6 +4,7 @@ use cgmath::{Matrix3, SquareMatrix};
 pub(in crate::renderer) struct Instance {
     pub(in crate::renderer) position: cgmath::Vector2<f32>,
     pub(in crate::renderer) size: cgmath::Vector2<f32>,
+    pub(in crate::renderer) texture: usize,
 }
 
 impl Instance {

@@ -9,15 +9,15 @@ struct Vertex {
 const VERTICES: &[Vertex] = &[
     Vertex {
         pos: [0.0, 0.0],
-        tex: [0.0, 0.0],
+        tex: [0.0, 1.0],
     },
     Vertex {
         pos: [1.0, 0.0],
-        tex: [0.0, 0.0],
+        tex: [1.0, 1.0],
     },
     Vertex {
         pos: [1.0, 1.0],
-        tex: [0.0, 0.0],
+        tex: [1.0, 0.0],
     },
     Vertex {
         pos: [0.0, 1.0],
