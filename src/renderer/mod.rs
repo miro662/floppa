@@ -8,8 +8,9 @@ mod texture;
 
 use crate::renderer::camera::Camera;
 use pollster::FutureExt;
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::iter;
+use std::rc::Rc;
 use wgpu::util::DeviceExt;
 use wgpu::{CommandEncoder, TextureView};
 use winit::window::Window;
@@ -19,10 +20,9 @@ use crate::renderer::instances::Instance;
 use crate::renderer::pass::PassDescriptor;
 use crate::renderer::pipeline::Pipeline;
 use crate::renderer::sprite_buffers::SpriteBuffers;
-use crate::renderer::texture::Texture;
+pub use crate::renderer::texture::Texture;
 
-#[derive(Debug, Copy, Clone, Hash, Eq, PartialEq)]
-pub struct TextureID(usize);
+pub type TextureRef = Rc<Texture>;
 
 #[derive(Debug)]
 pub struct Renderer {
@@ -32,7 +32,6 @@ pub struct Renderer {
     sprite_buffers: SpriteBuffers,
     pipeline: Pipeline,
     camera: Camera,
-    textures: Vec<Texture>,
 }
 
 impl Renderer {
@@ -82,22 +81,22 @@ impl Renderer {
             target_surface: surface,
             sprite_buffers,
             pipeline,
-            textures: vec![],
             camera,
         }
     }
 
-    pub fn render(&mut self, render_closure: impl FnOnce(&mut RenderContext) -> ()) {
+    pub fn render(&mut self, render_closure: impl Fn(&mut RenderContext) -> ()) {
         let mut ctx = RenderContext {
             renderer: self,
             clear_color: Color::default(),
             instances: vec![],
+            textures: HashMap::new(),
         };
         render_closure(&mut ctx);
         ctx.render();
     }
 
-    pub fn load_texture(&mut self, file_path: &str, id: usize) -> TextureID {
+    pub fn load_texture(&mut self, file_path: &str, id: usize) -> TextureRef {
         let texture = Texture::load_from_file(
             file_path,
             &self.device,
@@ -105,8 +104,7 @@ impl Renderer {
             &self.pipeline.bind_group_layouts.texture,
             id,
         );
-        self.textures.push(texture);
-        TextureID(self.textures.len() - 1)
+        Rc::new(texture)
     }
 }
 
@@ -115,19 +113,24 @@ pub struct RenderContext<'a> {
     renderer: &'a Renderer,
     clear_color: Color,
     instances: Vec<Instance>,
+    textures: HashMap<usize, TextureRef>,
 }
 
 impl<'a> RenderContext<'a> {
+    #[allow(dead_code)]
     pub fn set_clear_color(&mut self, color: Color) {
         self.clear_color = color
     }
 
-    pub fn draw_sprite(&mut self, texture_id: TextureID, position: cgmath::Vector2<i32>) {
-        let texture = &self.renderer.textures[texture_id.0];
+    pub fn draw_sprite(&mut self, texture: &TextureRef, position: cgmath::Vector2<i32>) {
+        if !self.textures.contains_key(&texture.id) {
+            self.textures.insert(texture.id, texture.clone());
+        }
+
         self.instances.push(Instance {
             position: (position.x as f32, position.y as f32).into(),
             size: (texture.size.x as f32, texture.size.y as f32).into(),
-            texture: texture_id,
+            texture_id: texture.id,
         })
     }
 
@@ -148,10 +151,8 @@ impl<'a> RenderContext<'a> {
             .iter()
             .map(|i| i.to_pass_descriptor())
             .collect();
-        let mut first_pass = true;
         for (id, pass_descriptor) in pass_descriptors.iter().enumerate() {
             self.encode_pass(&view, &mut encoder, &pass_descriptor, id);
-            first_pass = false;
         }
 
         self.renderer.queue.submit(iter::once(encoder.finish()));
@@ -187,7 +188,7 @@ impl<'a> RenderContext<'a> {
         render_pass.set_bind_group(0, &self.renderer.camera.bind_group, &[]);
         render_pass.set_bind_group(
             1,
-            &self.renderer.textures[pass_descriptor.texture_id.0].bind_group,
+            &self.textures[&pass_descriptor.texture_id].bind_group,
             &[],
         );
         render_pass.set_vertex_buffer(0, self.renderer.sprite_buffers.vertex.slice(..));

@@ -1,4 +1,4 @@
-use crate::renderer::{RenderContext, Renderer, TextureID};
+use crate::renderer::{RenderContext, Renderer, TextureRef};
 use cgmath::Vector2;
 use rand::prelude::*;
 use winit::dpi::LogicalSize;
@@ -17,11 +17,11 @@ const POINTS_SIZE: i32 = 12;
 const POINTS_MARGIN: i32 = 6;
 const TOLERANCE: i32 = BALL_VELOCITY;
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Clone)]
 struct Textures {
-    ball: TextureID,
-    palette: TextureID,
-    point: TextureID,
+    ball: TextureRef,
+    palette: TextureRef,
+    point: TextureRef,
 }
 
 #[derive(Debug, Copy, Clone)]
@@ -46,8 +46,6 @@ struct Palette {
 
     up_button_pressed: bool,
     down_button_pressed: bool,
-
-    texture: TextureID,
 }
 
 impl Palette {
@@ -89,8 +87,8 @@ impl Palette {
         }
     }
 
-    fn render(&self, ctx: &mut RenderContext) {
-        ctx.draw_sprite(self.texture, self.position);
+    fn render(&self, ctx: &mut RenderContext, textures: &Textures) {
+        ctx.draw_sprite(&textures.palette, self.position);
     }
 
     fn overlap(&self, bounds: Bounds) -> bool {
@@ -121,11 +119,10 @@ struct Player {
     palette: Palette,
     score: u32,
     side: Side,
-    points_texture: TextureID,
 }
 
 impl Player {
-    fn new(side: Side, textures: Textures) -> Player {
+    fn new(side: Side) -> Player {
         let x_palette_position = match side {
             Side::Left => BALL_SIZE,
             Side::Right => 800 - BALL_SIZE * 2,
@@ -149,21 +146,19 @@ impl Player {
                 down_button,
                 up_button_pressed: false,
                 down_button_pressed: false,
-                texture: textures.palette,
             },
-            points_texture: textures.point,
         }
     }
 
-    fn render(&self, ctx: &mut RenderContext) {
-        self.palette.render(ctx);
+    fn render(&self, ctx: &mut RenderContext, textures: &Textures) {
+        self.palette.render(ctx, textures);
 
         for i in 0..self.score {
             let x = match self.side {
                 Side::Left => POINTS_SIZE + (i as i32) * (POINTS_SIZE + POINTS_MARGIN),
                 Side::Right => 800 - (2 * POINTS_SIZE + (i as i32) * (POINTS_SIZE + POINTS_MARGIN)),
             };
-            ctx.draw_sprite(self.points_texture, (x, 600 - 2 * POINTS_SIZE).into());
+            ctx.draw_sprite(&textures.point, (x, 600 - 2 * POINTS_SIZE).into());
         }
     }
 
@@ -184,11 +179,10 @@ struct Ball {
     position: Vector2<i32>,
     velocity: Vector2<i32>,
     rng: ThreadRng,
-    texture: TextureID,
 }
 
 impl Ball {
-    fn new(texture: TextureID) -> Ball {
+    fn new() -> Ball {
         let mut rng = rand::thread_rng();
         let velocity = match rng.gen_range(0..=3) {
             0 => (BALL_VELOCITY, BALL_VELOCITY).into(),
@@ -201,7 +195,6 @@ impl Ball {
             position: (400 - BALL_SIZE / 2, 300 - BALL_SIZE / 2).into(),
             velocity,
             rng,
-            texture,
         }
     }
 
@@ -228,8 +221,8 @@ impl Ball {
         };
     }
 
-    fn render(&self, ctx: &mut RenderContext) {
-        ctx.draw_sprite(self.texture, self.position);
+    fn render(&self, ctx: &mut RenderContext, textures: &Textures) {
+        ctx.draw_sprite(&textures.ball, self.position);
     }
 
     fn restart(&mut self) {
@@ -251,13 +244,10 @@ struct State {
 }
 
 impl State {
-    fn new(textures: Textures) -> State {
+    fn new() -> State {
         State {
-            players: [
-                Player::new(Side::Left, textures),
-                Player::new(Side::Right, textures),
-            ],
-            ball: Ball::new(textures.ball),
+            players: [Player::new(Side::Left), Player::new(Side::Right)],
+            ball: Ball::new(),
         }
     }
 
@@ -286,11 +276,11 @@ impl State {
         self.players.iter_mut().any(|p| p.palette.input(&event))
     }
 
-    fn render(&self, ctx: &mut RenderContext) {
-        self.ball.render(ctx);
+    fn render(&self, ctx: &mut RenderContext, textures: &Textures) {
+        self.ball.render(ctx, textures);
 
         for player in &self.players {
-            player.render(ctx);
+            player.render(ctx, textures);
         }
     }
 
@@ -315,7 +305,7 @@ fn main() {
         palette: renderer.load_texture("sprites/palette.png", 1),
         point: renderer.load_texture("sprites/point.png", 2),
     };
-    let mut state = State::new(textures);
+    let mut state = State::new();
 
     let mut last_frame_finished = chrono::Utc::now();
     let step_duration = chrono::Duration::seconds(1) / STEPS_PER_SECOND;
@@ -338,7 +328,7 @@ fn main() {
                 duration = duration - step_duration;
             }
             renderer.render(|ctx| {
-                state.render(ctx);
+                state.render(ctx, &textures);
             });
             last_frame_finished = time_now;
         }

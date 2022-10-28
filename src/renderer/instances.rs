@@ -1,12 +1,11 @@
 use crate::renderer::pass::PassDescriptor;
-use crate::renderer::TextureID;
 use cgmath::Matrix3;
 
-#[derive(Debug, Copy, Clone, PartialEq)]
+#[derive(Debug, Copy, Clone)]
 pub(in crate::renderer) struct Instance {
     pub(in crate::renderer) position: cgmath::Vector2<f32>,
     pub(in crate::renderer) size: cgmath::Vector2<f32>,
-    pub(in crate::renderer) texture: TextureID,
+    pub(in crate::renderer) texture_id: usize,
 }
 
 impl Instance {
@@ -21,7 +20,7 @@ impl Instance {
     }
     pub(in crate::renderer) fn to_pass_descriptor(&self) -> PassDescriptor {
         PassDescriptor {
-            texture_id: self.texture,
+            texture_id: self.texture_id,
         }
     }
 }
