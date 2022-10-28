@@ -311,9 +311,9 @@ fn main() {
     window.set_inner_size(LogicalSize::new(800, 600));
     let mut renderer = Renderer::new(&window);
     let textures = Textures {
-        ball: renderer.load_texture("sprites/ball.png"),
-        palette: renderer.load_texture("sprites/palette.png"),
-        point: renderer.load_texture("sprites/point.png"),
+        ball: renderer.load_texture("sprites/ball.png", 0),
+        palette: renderer.load_texture("sprites/palette.png", 1),
+        point: renderer.load_texture("sprites/point.png", 2),
     };
     let mut state = State::new(textures);
 

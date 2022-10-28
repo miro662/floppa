@@ -8,6 +8,7 @@ pub struct Texture {
     pub sampler: wgpu::Sampler,
     pub size: Vector2<u32>,
     pub bind_group: wgpu::BindGroup,
+    pub id: usize,
 }
 
 impl Texture {
@@ -16,9 +17,10 @@ impl Texture {
         device: &wgpu::Device,
         queue: &wgpu::Queue,
         layout: &wgpu::BindGroupLayout,
+        id: usize,
     ) -> Texture {
         let image = ImageReader::open(file_name).unwrap().decode().unwrap();
-        Self::load_from_image(image, device, queue, layout)
+        Self::load_from_image(image, device, queue, layout, id)
     }
 
     pub fn load_from_image(
@@ -26,6 +28,7 @@ impl Texture {
         device: &wgpu::Device,
         queue: &wgpu::Queue,
         layout: &wgpu::BindGroupLayout,
+        id: usize,
     ) -> Texture {
         let image_rgba = image.to_rgba8();
 
@@ -94,6 +97,7 @@ impl Texture {
             sampler,
             bind_group,
             size: dimensions.into(),
+            id,
         }
     }
 }

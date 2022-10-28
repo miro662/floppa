@@ -97,12 +97,13 @@ impl Renderer {
         ctx.render();
     }
 
-    pub fn load_texture(&mut self, file_path: &str) -> TextureID {
+    pub fn load_texture(&mut self, file_path: &str, id: usize) -> TextureID {
         let texture = Texture::load_from_file(
             file_path,
             &self.device,
             &self.queue,
             &self.pipeline.bind_group_layouts.texture,
+            id,
         );
         self.textures.push(texture);
         TextureID(self.textures.len() - 1)
