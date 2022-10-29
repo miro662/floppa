@@ -1,4 +1,4 @@
-use crate::renderer::{RenderContext, Renderer, TextureRef};
+use crate::renderer::{Layer, RenderContext, Renderer, TextureRef};
 use cgmath::Vector2;
 use rand::prelude::*;
 use winit::dpi::LogicalSize;
@@ -17,11 +17,16 @@ const POINTS_SIZE: i32 = 12;
 const POINTS_MARGIN: i32 = 6;
 const TOLERANCE: i32 = BALL_VELOCITY;
 
+const BACKGROUND_LAYER: Layer = Layer(0);
+const GAME_LAYER: Layer = Layer(1);
+const UI_LAYER: Layer = Layer(2);
+
 #[derive(Debug, Clone)]
 struct Textures {
     ball: TextureRef,
     palette: TextureRef,
     point: TextureRef,
+    wall: TextureRef,
 }
 
 #[derive(Debug, Copy, Clone)]
@@ -88,7 +93,7 @@ impl Palette {
     }
 
     fn render(&self, ctx: &mut RenderContext, textures: &Textures) {
-        ctx.draw_sprite(&textures.palette, self.position);
+        ctx.draw_sprite(&textures.palette, self.position, GAME_LAYER);
     }
 
     fn overlap(&self, bounds: Bounds) -> bool {
@@ -158,7 +163,7 @@ impl Player {
                 Side::Left => POINTS_SIZE + (i as i32) * (POINTS_SIZE + POINTS_MARGIN),
                 Side::Right => 800 - (2 * POINTS_SIZE + (i as i32) * (POINTS_SIZE + POINTS_MARGIN)),
             };
-            ctx.draw_sprite(&textures.point, (x, 600 - 2 * POINTS_SIZE).into());
+            ctx.draw_sprite(&textures.point, (x, 600 - 2 * POINTS_SIZE).into(), UI_LAYER);
         }
     }
 
@@ -222,7 +227,7 @@ impl Ball {
     }
 
     fn render(&self, ctx: &mut RenderContext, textures: &Textures) {
-        ctx.draw_sprite(&textures.ball, self.position);
+        ctx.draw_sprite(&textures.ball, self.position, GAME_LAYER);
     }
 
     fn restart(&mut self) {
@@ -282,6 +287,8 @@ impl State {
         for player in &self.players {
             player.render(ctx, textures);
         }
+
+        ctx.draw_sprite(&textures.wall, (0, 0).into(), BACKGROUND_LAYER);
     }
 
     fn restart(&mut self) {
@@ -301,6 +308,7 @@ fn main() {
     window.set_inner_size(LogicalSize::new(800, 600));
     let mut renderer = Renderer::new(&window);
     let textures = Textures {
+        wall: renderer.load_texture("sprites/wall.png", 100),
         ball: renderer.load_texture("sprites/ball.png", 0),
         palette: renderer.load_texture("sprites/palette.png", 1),
         point: renderer.load_texture("sprites/point.png", 2),

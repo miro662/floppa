@@ -22,6 +22,9 @@ use crate::renderer::pipeline::Pipeline;
 use crate::renderer::sprite_buffers::SpriteBuffers;
 pub use crate::renderer::texture::Texture;
 
+#[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
+pub struct Layer(pub isize);
+
 pub type TextureRef = Rc<Texture>;
 
 #[derive(Debug)]
@@ -122,7 +125,12 @@ impl<'a> RenderContext<'a> {
         self.clear_color = color
     }
 
-    pub fn draw_sprite(&mut self, texture: &TextureRef, position: cgmath::Vector2<i32>) {
+    pub fn draw_sprite(
+        &mut self,
+        texture: &TextureRef,
+        position: cgmath::Vector2<i32>,
+        layer: Layer,
+    ) {
         if !self.textures.contains_key(&texture.id) {
             self.textures.insert(texture.id, texture.clone());
         }
@@ -131,6 +139,7 @@ impl<'a> RenderContext<'a> {
             position: (position.x as f32, position.y as f32).into(),
             size: (texture.size.x as f32, texture.size.y as f32).into(),
             texture_id: texture.id,
+            layer,
         })
     }
 
@@ -151,7 +160,10 @@ impl<'a> RenderContext<'a> {
             .iter()
             .map(|i| i.to_pass_descriptor())
             .collect();
-        for (id, pass_descriptor) in pass_descriptors.iter().enumerate() {
+        let mut sorted_descriptors: Vec<_> = pass_descriptors.iter().collect();
+        sorted_descriptors.sort_by_key(|pd| pd.layer);
+
+        for (id, pass_descriptor) in sorted_descriptors.iter().enumerate() {
             self.encode_pass(&view, &mut encoder, &pass_descriptor, id);
         }
 
