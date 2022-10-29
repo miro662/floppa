@@ -12,12 +12,31 @@ struct VertexInput {
 struct InstanceInput {
     @location(2) matrix_1: vec3<f32>,
     @location(3) matrix_2: vec3<f32>,
-    @location(4) matrix_3: vec3<f32>
+    @location(4) matrix_3: vec3<f32>,
+    @location(5) tex_lower_bounds: vec2<f32>,
+    @location(6) tex_higher_bounds: vec2<f32>
 }
 
 struct VertexOutput {
     @builtin(position) clip_pos: vec4<f32>,
     @location(0) tex: vec2<f32>
+}
+
+fn real_tex_coords(vertex: VertexInput, instance: InstanceInput) -> vec2<f32> {
+    var real_tex = vec2<f32>(0.0, 0.0);
+
+    if (vertex.tex.x < 0.5) {
+        real_tex.x = instance.tex_lower_bounds.x;
+    } else {
+        real_tex.x = instance.tex_higher_bounds.x;
+    }
+
+    if (vertex.tex.y < 0.5) {
+        real_tex.y = instance.tex_lower_bounds.y;
+    } else {
+        real_tex.y = instance.tex_higher_bounds.y;
+    }
+    return real_tex;
 }
 
 @vertex
@@ -33,7 +52,7 @@ fn vertex(
     out.clip_pos = vec4<f32>(transformed_pos.xy, 0.0, transformed_pos.z);
     out.clip_pos = camera.view_proj * out.clip_pos;
 
-    out.tex = model.tex;
+    out.tex = real_tex_coords(model, instance);
 
     return out;
 }

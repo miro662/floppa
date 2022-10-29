@@ -135,9 +135,12 @@ impl<'a> RenderContext<'a> {
 
         self.instances.push(Instance {
             position: (position.x as f32, position.y as f32).into(),
-            size: (texture.size.x as f32, texture.size.y as f32).into(),
             texture_id: texture.id,
             layer,
+
+            tex_size: texture.size,
+            sprite_size: sprite.size,
+            sprite_offset: sprite.offset,
         })
     }
 

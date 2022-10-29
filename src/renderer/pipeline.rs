@@ -82,9 +82,9 @@ impl Pipeline {
         };
 
         let instances_buf_desc = wgpu::VertexBufferLayout {
-            array_stride: mem::size_of::<[f32; 9]>() as wgpu::BufferAddress,
+            array_stride: mem::size_of::<[f32; 13]>() as wgpu::BufferAddress,
             step_mode: wgpu::VertexStepMode::Instance,
-            attributes: &wgpu::vertex_attr_array![2 => Float32x3, 3 => Float32x3, 4 => Float32x3],
+            attributes: &wgpu::vertex_attr_array![2 => Float32x3, 3 => Float32x3, 4 => Float32x3, 5 => Float32x2, 6 => Float32x2],
         };
 
         let blend_state = wgpu::BlendState {
