@@ -1,5 +1,6 @@
 use crate::renderer::sprite::Sprite;
 use crate::renderer::{Layer, RenderContext, Renderer, TextureRef};
+use crate::renderer_ext::sprite::{GridMode, SpriteExt};
 use cgmath::Vector2;
 use rand::prelude::*;
 use winit::dpi::LogicalSize;
@@ -8,6 +9,7 @@ use winit::event_loop::{ControlFlow, EventLoop};
 use winit::window::Window;
 
 mod renderer;
+mod renderer_ext;
 
 const BALL_SIZE: i32 = 32;
 const STEPS_PER_SECOND: i32 = 60;
@@ -27,7 +29,38 @@ struct Sprites {
     ball: Sprite,
     palette: Sprite,
     point: Sprite,
-    wall: Sprite,
+    wall: Vec<Sprite>,
+}
+
+#[derive(Debug)]
+struct Wall {
+    ids: [[u32; 10]; 13],
+}
+
+impl Wall {
+    fn new() -> Wall {
+        let mut ids = [[0; 10]; 13];
+        let mut rand = thread_rng();
+        for x in 0..13 {
+            for y in 0..10 {
+                ids[x][y] = rand.next_u32() % 6;
+            }
+        }
+        Wall { ids }
+    }
+
+    fn render(&self, ctx: &mut RenderContext, sprites: &Sprites) {
+        for x in 0..13 {
+            for y in 0..10 {
+                let sprite = &sprites.wall[self.ids[x][y] as usize];
+                ctx.draw_sprite(
+                    sprite,
+                    (64 * x as i32, 64 * y as i32).into(),
+                    BACKGROUND_LAYER,
+                );
+            }
+        }
+    }
 }
 
 #[derive(Debug, Copy, Clone)]
@@ -189,7 +222,7 @@ struct Ball {
 
 impl Ball {
     fn new() -> Ball {
-        let mut rng = rand::thread_rng();
+        let mut rng = thread_rng();
         let velocity = match rng.gen_range(0..=3) {
             0 => (BALL_VELOCITY, BALL_VELOCITY).into(),
             1 => (-BALL_VELOCITY, BALL_VELOCITY).into(),
@@ -247,6 +280,7 @@ impl Ball {
 struct State {
     players: [Player; 2],
     ball: Ball,
+    wall: Wall,
 }
 
 impl State {
@@ -254,6 +288,7 @@ impl State {
         State {
             players: [Player::new(Side::Left), Player::new(Side::Right)],
             ball: Ball::new(),
+            wall: Wall::new(),
         }
     }
 
@@ -289,7 +324,7 @@ impl State {
             player.render(ctx, textures);
         }
 
-        ctx.draw_sprite(&textures.wall, (0, 0).into(), BACKGROUND_LAYER);
+        self.wall.render(ctx, textures);
     }
 
     fn restart(&mut self) {
@@ -309,7 +344,8 @@ fn main() {
     window.set_inner_size(LogicalSize::new(800, 600));
     let mut renderer = Renderer::new(&window);
     let textures = Sprites {
-        wall: Sprite::from_whole_texture(&renderer.load_texture("sprites/wall.png", 0)),
+        wall: Sprite::from_whole_texture(&renderer.load_texture("sprites/wall.png", 0))
+            .uniform_grid(GridMode::CellSize((64, 64).into())),
         ball: Sprite::from_whole_texture(&renderer.load_texture("sprites/ball.png", 1)),
         palette: Sprite::from_whole_texture(&renderer.load_texture("sprites/palette.png", 2)),
         point: Sprite::from_whole_texture(&renderer.load_texture("sprites/point.png", 3)),

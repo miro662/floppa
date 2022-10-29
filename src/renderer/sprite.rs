@@ -17,9 +17,9 @@ impl Sprite {
         }
     }
 
-    pub fn from_sprite(sprite: &Sprite, size: Vector2<u32>, offset: Vector2<u32>) -> Sprite {
+    pub fn slice(&self, size: Vector2<u32>, offset: Vector2<u32>) -> Sprite {
         Sprite {
-            texture: sprite.texture.clone(),
+            texture: self.texture.clone(),
             size,
             offset,
         }

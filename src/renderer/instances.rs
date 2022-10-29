@@ -23,7 +23,7 @@ impl Instance {
         let sprite_higher_bounds = sprite_offset + sprite_size;
 
         let translation = Matrix3::from_translation(self.position);
-        let scale = Matrix3::from_nonuniform_scale(tex_size.x, tex_size.y);
+        let scale = Matrix3::from_nonuniform_scale(sprite_size.x, sprite_size.y);
         let matrix = translation * scale;
 
         InstanceRaw {
