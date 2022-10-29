@@ -87,9 +87,18 @@ impl Pipeline {
             attributes: &wgpu::vertex_attr_array![2 => Float32x3, 3 => Float32x3, 4 => Float32x3],
         };
 
+        let blend_state = wgpu::BlendState {
+            color: wgpu::BlendComponent {
+                src_factor: wgpu::BlendFactor::SrcAlpha,
+                dst_factor: wgpu::BlendFactor::OneMinusSrcAlpha,
+                operation: wgpu::BlendOperation::Add,
+            },
+            alpha: wgpu::BlendComponent::OVER,
+        };
+
         let fragment_targets = [Some(wgpu::ColorTargetState {
             format: target_format,
-            blend: Some(wgpu::BlendState::REPLACE),
+            blend: Some(blend_state),
             write_mask: wgpu::ColorWrites::ALL,
         })];
 

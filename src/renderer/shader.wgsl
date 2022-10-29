@@ -46,8 +46,5 @@ var sampler_: sampler;
 @fragment
 fn fragment(in: VertexOutput) -> @location(0) vec4<f32> {
     var color = textureSample(texture, sampler_, in.tex);
-    if (color.a < 0.1) {
-        discard;
-    }
     return color;
 }
