@@ -4,13 +4,13 @@ use cgmath::{Matrix3, Vector2};
 
 #[derive(Debug, Copy, Clone)]
 pub(in crate::renderer) struct Instance {
-    pub(in crate::renderer) position: cgmath::Vector2<f32>,
+    pub(in crate::renderer) position: Vector2<f32>,
     pub(in crate::renderer) texture_id: usize,
     pub(in crate::renderer) layer: Layer,
 
-    pub(in crate::renderer) tex_size: cgmath::Vector2<u32>,
-    pub(in crate::renderer) sprite_size: cgmath::Vector2<u32>,
-    pub(in crate::renderer) sprite_offset: cgmath::Vector2<u32>,
+    pub(in crate::renderer) tex_size: Vector2<u32>,
+    pub(in crate::renderer) sprite_size: Vector2<u32>,
+    pub(in crate::renderer) sprite_offset: Vector2<u32>,
 }
 
 impl Instance {
