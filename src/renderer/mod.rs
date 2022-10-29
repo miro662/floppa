@@ -3,6 +3,7 @@ pub mod color;
 mod instances;
 mod pass;
 mod pipeline;
+pub mod sprite;
 mod sprite_buffers;
 mod texture;
 
@@ -19,6 +20,7 @@ use crate::renderer::color::Color;
 use crate::renderer::instances::Instance;
 use crate::renderer::pass::PassDescriptor;
 use crate::renderer::pipeline::Pipeline;
+use crate::renderer::sprite::Sprite;
 use crate::renderer::sprite_buffers::SpriteBuffers;
 pub use crate::renderer::texture::Texture;
 
@@ -125,12 +127,8 @@ impl<'a> RenderContext<'a> {
         self.clear_color = color
     }
 
-    pub fn draw_sprite(
-        &mut self,
-        texture: &TextureRef,
-        position: cgmath::Vector2<i32>,
-        layer: Layer,
-    ) {
+    pub fn draw_sprite(&mut self, sprite: &Sprite, position: cgmath::Vector2<i32>, layer: Layer) {
+        let texture = &sprite.texture;
         if !self.textures.contains_key(&texture.id) {
             self.textures.insert(texture.id, texture.clone());
         }

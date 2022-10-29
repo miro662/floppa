@@ -1,3 +1,4 @@
+use crate::renderer::sprite::Sprite;
 use crate::renderer::{Layer, RenderContext, Renderer, TextureRef};
 use cgmath::Vector2;
 use rand::prelude::*;
@@ -22,11 +23,11 @@ const GAME_LAYER: Layer = Layer(1);
 const UI_LAYER: Layer = Layer(2);
 
 #[derive(Debug, Clone)]
-struct Textures {
-    ball: TextureRef,
-    palette: TextureRef,
-    point: TextureRef,
-    wall: TextureRef,
+struct Sprites {
+    ball: Sprite,
+    palette: Sprite,
+    point: Sprite,
+    wall: Sprite,
 }
 
 #[derive(Debug, Copy, Clone)]
@@ -92,7 +93,7 @@ impl Palette {
         }
     }
 
-    fn render(&self, ctx: &mut RenderContext, textures: &Textures) {
+    fn render(&self, ctx: &mut RenderContext, textures: &Sprites) {
         ctx.draw_sprite(&textures.palette, self.position, GAME_LAYER);
     }
 
@@ -155,7 +156,7 @@ impl Player {
         }
     }
 
-    fn render(&self, ctx: &mut RenderContext, textures: &Textures) {
+    fn render(&self, ctx: &mut RenderContext, textures: &Sprites) {
         self.palette.render(ctx, textures);
 
         for i in 0..self.score {
@@ -226,7 +227,7 @@ impl Ball {
         };
     }
 
-    fn render(&self, ctx: &mut RenderContext, textures: &Textures) {
+    fn render(&self, ctx: &mut RenderContext, textures: &Sprites) {
         ctx.draw_sprite(&textures.ball, self.position, GAME_LAYER);
     }
 
@@ -281,7 +282,7 @@ impl State {
         self.players.iter_mut().any(|p| p.palette.input(&event))
     }
 
-    fn render(&self, ctx: &mut RenderContext, textures: &Textures) {
+    fn render(&self, ctx: &mut RenderContext, textures: &Sprites) {
         self.ball.render(ctx, textures);
 
         for player in &self.players {
@@ -307,11 +308,11 @@ fn main() {
     let window = Window::new(&ev_loop).unwrap();
     window.set_inner_size(LogicalSize::new(800, 600));
     let mut renderer = Renderer::new(&window);
-    let textures = Textures {
-        wall: renderer.load_texture("sprites/wall.png", 100),
-        ball: renderer.load_texture("sprites/ball.png", 0),
-        palette: renderer.load_texture("sprites/palette.png", 1),
-        point: renderer.load_texture("sprites/point.png", 2),
+    let textures = Sprites {
+        wall: Sprite::from_whole_texture(&renderer.load_texture("sprites/wall.png", 0)),
+        ball: Sprite::from_whole_texture(&renderer.load_texture("sprites/ball.png", 1)),
+        palette: Sprite::from_whole_texture(&renderer.load_texture("sprites/palette.png", 2)),
+        point: Sprite::from_whole_texture(&renderer.load_texture("sprites/point.png", 3)),
     };
     let mut state = State::new();
 
