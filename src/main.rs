@@ -1,5 +1,6 @@
 use crate::renderer::sprite::Sprite;
 use crate::renderer::{Layer, RenderContext, Renderer, TextureRef};
+use crate::renderer_ext::bitmap_font::{BitmapFont, BitmapFontSettings};
 use crate::renderer_ext::sprite::{GridMode, SpriteExt};
 use crate::GridMode::CellSize;
 use cgmath::Vector2;
@@ -31,6 +32,7 @@ struct Sprites {
     palette: Sprite,
     point: Sprite,
     wall: Vec<Sprite>,
+    score_font: BitmapFont,
 }
 
 impl Sprites {
@@ -45,11 +47,17 @@ impl Sprites {
         let ball = sprites_sprite.slice((32, 32).into(), (32, 0).into());
         let point = sprites_sprite.slice((16, 16).into(), (32, 32).into());
 
+        let font_texture = &renderer.load_texture("sprites/font.png", 2);
+        let font_sprite = Sprite::from_whole_texture(font_texture);
+        let font_grid = font_sprite.uniform_grid(CellSize((16, 16).into()));
+        let score_font = BitmapFont::new(&font_grid, '0'..'9', BitmapFontSettings::default());
+
         Sprites {
             wall,
             palette,
             ball,
             point,
+            score_font,
         }
     }
 }
@@ -214,13 +222,14 @@ impl Player {
     fn render(&self, ctx: &mut RenderContext, textures: &Sprites) {
         self.palette.render(ctx, textures);
 
-        for i in 0..self.score {
-            let x = match self.side {
-                Side::Left => POINTS_SIZE + (i as i32) * (POINTS_SIZE + POINTS_MARGIN),
-                Side::Right => 800 - (2 * POINTS_SIZE + (i as i32) * (POINTS_SIZE + POINTS_MARGIN)),
-            };
-            ctx.draw_sprite(&textures.point, (x, 600 - 2 * POINTS_SIZE).into(), UI_LAYER);
-        }
+        let position_x = match self.side {
+            Side::Left => POINTS_SIZE,
+            Side::Right => 800 - 2 * POINTS_SIZE,
+        };
+        let position = (position_x, 600 - 2 * POINTS_SIZE).into();
+        textures
+            .score_font
+            .draw_text(ctx, &self.score.to_string(), position, UI_LAYER);
     }
 
     fn should_score(&self, bounds: Bounds) -> bool {
