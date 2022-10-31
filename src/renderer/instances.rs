@@ -1,3 +1,4 @@
+use crate::renderer::color::Color;
 use crate::renderer::pass::PassDescriptor;
 use crate::renderer::Layer;
 use cgmath::{Matrix3, Vector2};
@@ -11,6 +12,7 @@ pub(in crate::renderer) struct Instance {
     pub(in crate::renderer) tex_size: Vector2<u32>,
     pub(in crate::renderer) sprite_size: Vector2<u32>,
     pub(in crate::renderer) sprite_offset: Vector2<u32>,
+    pub(in crate::renderer) color: Color,
 }
 
 impl Instance {
@@ -33,6 +35,12 @@ impl Instance {
                 sprite_higher_bounds.x / tex_size.x,
                 sprite_higher_bounds.y / tex_size.y,
             ],
+            color: [
+                self.color.r as f32,
+                self.color.g as f32,
+                self.color.b as f32,
+                self.color.a as f32,
+            ],
         }
     }
     pub(in crate::renderer) fn to_pass_descriptor(&self) -> PassDescriptor {
@@ -49,4 +57,5 @@ pub(in crate::renderer) struct InstanceRaw {
     matrix: [[f32; 3]; 3],
     tex_lower_bounds: [f32; 2],
     tex_higher_bounds: [f32; 2],
+    color: [f32; 4],
 }

@@ -141,6 +141,7 @@ impl<'a> RenderContext<'a> {
             tex_size: texture.size,
             sprite_size: sprite.size,
             sprite_offset: sprite.offset,
+            color: color::YELLOW,
         })
     }
 
