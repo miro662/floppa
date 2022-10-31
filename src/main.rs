@@ -41,18 +41,15 @@ struct Sprites {
 
 impl Sprites {
     fn load(renderer: &mut Renderer) -> Sprites {
-        let wall_texture = &renderer.load_texture("sprites/wall.png", 0);
-        let wall_sprite = Sprite::from_whole_texture(wall_texture);
+        let wall_sprite = &renderer.load_sprite("sprites/wall.png").unwrap();
         let wall = wall_sprite.uniform_grid(CellSize((64, 64).into()));
 
-        let sprites_texture = &renderer.load_texture("sprites/sprites.png", 1);
-        let sprites_sprite = Sprite::from_whole_texture(sprites_texture);
+        let sprites_sprite = &renderer.load_sprite("sprites/sprites.png").unwrap();
         let palette = sprites_sprite.slice((32, 128).into(), (0, 0).into());
         let ball = sprites_sprite.slice((32, 32).into(), (32, 0).into());
         let point = sprites_sprite.slice((16, 16).into(), (32, 32).into());
 
-        let font_texture = &renderer.load_texture("sprites/font.png", 2);
-        let font_sprite = Sprite::from_whole_texture(font_texture);
+        let font_sprite = &renderer.load_sprite("sprites/font.png").unwrap();
         let font_grid = font_sprite.uniform_grid(CellSize((16, 16).into()));
         let score_font = BitmapFont::new(&font_grid, '0'..='9', BitmapFontSettings::default());
 

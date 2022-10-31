@@ -1,6 +1,7 @@
 use cgmath::Vector2;
 use image::io::Reader as ImageReader;
 use image::{DynamicImage, GenericImageView};
+use crate::renderer::Error;
 
 #[derive(Debug)]
 pub struct Texture {
@@ -18,9 +19,10 @@ impl Texture {
         queue: &wgpu::Queue,
         layout: &wgpu::BindGroupLayout,
         id: usize,
-    ) -> Texture {
-        let image = ImageReader::open(file_name).unwrap().decode().unwrap();
-        Self::load_from_image(image, device, queue, layout, id)
+    ) -> Result<Texture, Error> {
+        let image = ImageReader::open(file_name)?;
+        let decoded_image = image.decode().map_err(|_| Error::TextureEncodingError)?;
+        Ok(Self::load_from_image(decoded_image, device, queue, layout, id))
     }
 
     pub fn load_from_image(

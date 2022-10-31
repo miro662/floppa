@@ -39,6 +39,7 @@ pub struct Renderer {
     sprite_buffers: SpriteBuffers,
     pipeline: Pipeline,
     camera: Camera,
+    texture_id: usize,
 }
 
 impl Renderer {
@@ -89,6 +90,7 @@ impl Renderer {
             sprite_buffers,
             pipeline,
             camera,
+            texture_id: 0
         })
     }
 
@@ -106,15 +108,18 @@ impl Renderer {
         ctx.render()
     }
 
-    pub fn load_texture(&mut self, file_path: &str, id: usize) -> TextureRef {
+    pub fn load_sprite(&mut self, file_path: &str) -> Result<Sprite, Error> {
         let texture = Texture::load_from_file(
             file_path,
             &self.device,
             &self.queue,
             &self.pipeline.bind_group_layouts.texture,
-            id,
-        );
-        Rc::new(texture)
+            self.texture_id,
+        )?;
+        let texture_ref = Rc::new(texture);
+        self.texture_id += 1;
+
+        Ok(Sprite::from_whole_texture(&texture_ref))
     }
 }
 
