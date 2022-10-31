@@ -1,5 +1,6 @@
 mod camera;
 pub mod color;
+mod error;
 mod instances;
 mod pass;
 mod pipeline;
@@ -17,6 +18,7 @@ use wgpu::{CommandEncoder, TextureView};
 use winit::window::Window;
 
 use crate::renderer::color::Color;
+pub use crate::renderer::error::Error;
 use crate::renderer::instances::Instance;
 use crate::renderer::pass::PassDescriptor;
 use crate::renderer::pipeline::Pipeline;
@@ -40,7 +42,7 @@ pub struct Renderer {
 }
 
 impl Renderer {
-    pub fn new(window: &Window) -> Renderer {
+    pub fn new(window: &Window) -> Result<Renderer, Error> {
         let backends = wgpu::Backends::all();
         let instance = wgpu::Instance::new(backends);
         let surface = unsafe { instance.create_surface(window) };
@@ -52,7 +54,8 @@ impl Renderer {
                 compatible_surface: Some(&surface),
             })
             .block_on()
-            .unwrap();
+            .ok_or(Error::NoDevice)?;
+
         let (device, queue) = adapter
             .request_device(
                 &wgpu::DeviceDescriptor {
@@ -62,8 +65,7 @@ impl Renderer {
                 },
                 None,
             )
-            .block_on()
-            .unwrap();
+            .block_on()?;
 
         let config = wgpu::SurfaceConfiguration {
             usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
@@ -80,17 +82,20 @@ impl Renderer {
         let pipeline = Pipeline::create(&device, config.format);
         let camera = Camera::new(&device, screen_size, &pipeline.bind_group_layouts.camera);
 
-        Renderer {
+        Ok(Renderer {
             device,
             queue,
             target_surface: surface,
             sprite_buffers,
             pipeline,
             camera,
-        }
+        })
     }
 
-    pub fn render(&mut self, render_closure: impl Fn(&mut RenderContext) -> ()) {
+    pub fn render(
+        &mut self,
+        render_closure: impl Fn(&mut RenderContext) -> (),
+    ) -> Result<(), Error> {
         let mut ctx = RenderContext {
             renderer: self,
             clear_color: Color::default(),
@@ -98,7 +103,7 @@ impl Renderer {
             textures: HashMap::new(),
         };
         render_closure(&mut ctx);
-        ctx.render();
+        ctx.render()
     }
 
     pub fn load_texture(&mut self, file_path: &str, id: usize) -> TextureRef {
@@ -147,12 +152,12 @@ impl<'a> RenderContext<'a> {
             tex_size: texture.size,
             sprite_size: sprite.size,
             sprite_offset: sprite.offset,
-            color: color,
+            color,
         })
     }
 
-    fn render(&self) {
-        let output = self.renderer.target_surface.get_current_texture().unwrap();
+    fn render(&self) -> Result<(), Error> {
+        let output = self.renderer.target_surface.get_current_texture()?;
         let view = output
             .texture
             .create_view(&wgpu::TextureViewDescriptor::default());
@@ -177,6 +182,7 @@ impl<'a> RenderContext<'a> {
 
         self.renderer.queue.submit(iter::once(encoder.finish()));
         output.present();
+        Ok(())
     }
 
     fn encode_pass(

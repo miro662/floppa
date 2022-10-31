@@ -6,9 +6,9 @@ use crate::renderer_ext::bitmap_font::{BitmapFont, BitmapFontSettings, TextAlign
 use crate::renderer_ext::context_ext::RenderContextExt;
 use crate::renderer_ext::sprite::{GridMode, SpriteExt};
 use crate::GridMode::CellSize;
-use crate::Side::Left;
 use cgmath::Vector2;
 use rand::prelude::*;
+use std::error::Error;
 use winit::dpi::LogicalSize;
 use winit::event::{ElementState, Event, KeyboardInput, VirtualKeyCode, WindowEvent};
 use winit::event_loop::{ControlFlow, EventLoop};
@@ -382,13 +382,13 @@ impl State {
     }
 }
 
-fn main() {
+fn main() -> Result<(), Box<dyn Error>> {
     env_logger::init();
 
     let ev_loop = EventLoop::new();
-    let window = Window::new(&ev_loop).unwrap();
+    let window = Window::new(&ev_loop)?;
     window.set_inner_size(LogicalSize::new(800, 600));
-    let mut renderer = Renderer::new(&window);
+    let mut renderer = Renderer::new(&window)?;
     let textures = Sprites::load(&mut renderer);
     let mut state = State::new();
 
@@ -412,9 +412,15 @@ fn main() {
                 state.update();
                 duration = duration - step_duration;
             }
-            renderer.render(|ctx| {
+            let render_result = renderer.render(|ctx| {
                 state.render(ctx, &textures);
             });
+            match render_result {
+                Ok(stats) => println!("{:?}", stats),
+                Err(e) => match e {
+                    _ => panic!("Unhandled render error: {}", e),
+                },
+            }
             last_frame_finished = time_now;
         }
         Event::MainEventsCleared => window.request_redraw(),
