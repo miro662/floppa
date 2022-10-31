@@ -1,7 +1,7 @@
 extern crate core;
 
 use crate::renderer::sprite::Sprite;
-use crate::renderer::{Layer, RenderContext, Renderer, TextureRef};
+use crate::renderer::{color, Layer, RenderContext, Renderer, TextureRef};
 use crate::renderer_ext::bitmap_font::{BitmapFont, BitmapFontSettings, TextAlignment};
 use crate::renderer_ext::context_ext::RenderContextExt;
 use crate::renderer_ext::sprite::{GridMode, SpriteExt};
@@ -91,6 +91,7 @@ impl Wall {
                     sprite,
                     (64 * x as i32, 64 * y as i32).into(),
                     BACKGROUND_LAYER,
+                    color::WHITE,
                 );
             }
         }
@@ -161,7 +162,7 @@ impl Palette {
     }
 
     fn render(&self, ctx: &mut RenderContext, textures: &Sprites) {
-        ctx.draw_sprite(&textures.palette, self.position, GAME_LAYER);
+        ctx.draw_sprite(&textures.palette, self.position, GAME_LAYER, color::WHITE);
     }
 
     fn overlap(&self, bounds: Bounds) -> bool {
@@ -211,7 +212,7 @@ impl Player {
 
         Player {
             side,
-            score: 2137,
+            score: 0,
             palette: Palette {
                 position: (x_palette_position, (600 - PALETTE_SIZE) / 2).into(),
                 side,
@@ -242,6 +243,7 @@ impl Player {
             &self.score.to_string(),
             position,
             UI_LAYER,
+            color::YELLOW,
         );
     }
 
@@ -305,7 +307,7 @@ impl Ball {
     }
 
     fn render(&self, ctx: &mut RenderContext, textures: &Sprites) {
-        ctx.draw_sprite(&textures.ball, self.position, GAME_LAYER);
+        ctx.draw_sprite(&textures.ball, self.position, GAME_LAYER, color::WHITE);
     }
 
     fn restart(&mut self) {

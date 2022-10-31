@@ -1,3 +1,4 @@
+use crate::color::Color;
 use crate::{BitmapFont, Layer, RenderContext, TextAlignment};
 use cgmath::Vector2;
 
@@ -10,6 +11,7 @@ pub trait RenderContextExt {
         text: &str,
         position: Vector2<i32>,
         layer: Layer,
+        color: Color,
     );
 }
 
@@ -22,7 +24,8 @@ impl<'a> RenderContextExt for RenderContext<'a> {
         text: &str,
         position: Vector2<i32>,
         layer: Layer,
+        color: Color,
     ) {
-        font.draw_text(self, text, position, layer, alignment, padding);
+        font.draw_text(self, text, position, layer, alignment, padding, color);
     }
 }

@@ -127,7 +127,13 @@ impl<'a> RenderContext<'a> {
         self.clear_color = color
     }
 
-    pub fn draw_sprite(&mut self, sprite: &Sprite, position: cgmath::Vector2<i32>, layer: Layer) {
+    pub fn draw_sprite(
+        &mut self,
+        sprite: &Sprite,
+        position: cgmath::Vector2<i32>,
+        layer: Layer,
+        color: Color,
+    ) {
         let texture = &sprite.texture;
         if !self.textures.contains_key(&texture.id) {
             self.textures.insert(texture.id, texture.clone());
@@ -141,7 +147,7 @@ impl<'a> RenderContext<'a> {
             tex_size: texture.size,
             sprite_size: sprite.size,
             sprite_offset: sprite.offset,
-            color: color::YELLOW,
+            color: color,
         })
     }
 

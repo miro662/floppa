@@ -1,3 +1,5 @@
+use crate::renderer::color;
+use crate::renderer::color::Color;
 use crate::renderer_ext::bitmap_font::MissingCharacterBehaviour::{Panic, Skip};
 use crate::renderer_ext::bitmap_font::SpaceBehaviour::TreatAsCharacter;
 use crate::{Layer, RenderContext, Renderer, Sprite};
@@ -101,11 +103,12 @@ impl BitmapFont {
         character: char,
         position: Vector2<i32>,
         layer: Layer,
+        color: Color,
     ) -> i32 {
         let (real_ch, space) = self.get_real_char(character);
         if let Some(ch) = real_ch {
             let sprite = &self.characters_map[&ch];
-            ctx.draw_sprite(sprite, position, layer);
+            ctx.draw_sprite(sprite, position, layer, color);
         }
         space
     }
@@ -118,6 +121,7 @@ impl BitmapFont {
         layer: Layer,
         alignment: &TextAlignment,
         padding: i32,
+        color: Color,
     ) {
         use TextAlignment::*;
         let string_size: i32 = line.chars().map(|ch| self.get_real_char(ch).1).sum();
@@ -130,7 +134,7 @@ impl BitmapFont {
         let mut current_position = (x_position, position.y).into();
 
         for ch in line.chars() {
-            let offset = self.draw_char(ctx, ch, current_position, layer);
+            let offset = self.draw_char(ctx, ch, current_position, layer, color);
             current_position.x += offset + padding * 2;
         }
     }
@@ -143,6 +147,7 @@ impl BitmapFont {
         layer: Layer,
         alignment: &TextAlignment,
         padding: Vector2<i32>,
+        color: Color,
     ) {
         let mut current_position = position;
         let lines = text.lines();
@@ -152,7 +157,15 @@ impl BitmapFont {
             .and_then(|ch| self.characters_map.get(&ch))
             .map_or(0, |ch| ch.get_size().y) as i32;
         for line in lines {
-            self.draw_line(ctx, line, current_position, layer, alignment, padding.x);
+            self.draw_line(
+                ctx,
+                line,
+                current_position,
+                layer,
+                alignment,
+                padding.x,
+                color,
+            );
             current_position.y -= line_height + padding.y * 2;
         }
     }
