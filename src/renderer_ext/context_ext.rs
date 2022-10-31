@@ -1,5 +1,6 @@
-use crate::color::Color;
-use crate::{BitmapFont, Layer, RenderContext, TextAlignment};
+use crate::renderer::color::Color;
+use crate::renderer::{Layer, RenderContext};
+use crate::renderer_ext::bitmap_font::{BitmapFont, TextAlignment};
 use cgmath::Vector2;
 
 pub trait RenderContextExt {

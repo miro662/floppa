@@ -1,4 +1,4 @@
-use crate::TextureRef;
+use crate::renderer::TextureRef;
 use cgmath::Vector2;
 
 #[derive(Debug, Clone)]

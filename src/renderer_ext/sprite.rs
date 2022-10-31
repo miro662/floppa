@@ -1,5 +1,4 @@
-use crate::Sprite;
-use std::str::SplitInclusive;
+use crate::renderer::sprite::Sprite;
 
 pub enum GridMode {
     CellSize(cgmath::Vector2<u32>),

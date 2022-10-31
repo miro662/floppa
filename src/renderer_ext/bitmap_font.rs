@@ -1,8 +1,7 @@
-use crate::renderer::color;
 use crate::renderer::color::Color;
+use crate::renderer::sprite::Sprite;
+use crate::renderer::{Layer, RenderContext};
 use crate::renderer_ext::bitmap_font::MissingCharacterBehaviour::{Panic, Skip};
-use crate::renderer_ext::bitmap_font::SpaceBehaviour::TreatAsCharacter;
-use crate::{Layer, RenderContext, Renderer, Sprite};
 use cgmath::Vector2;
 use std::collections::HashMap;
 

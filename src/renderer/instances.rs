@@ -45,7 +45,7 @@ impl Instance {
     }
     pub(in crate::renderer) fn to_pass_descriptor(&self) -> PassDescriptor {
         PassDescriptor {
-            texture_id: self.texture_id,
+            texture_id: Some(self.texture_id),
             layer: self.layer,
         }
     }

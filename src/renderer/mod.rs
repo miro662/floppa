@@ -26,7 +26,7 @@ use crate::renderer::sprite::Sprite;
 use crate::renderer::sprite_buffers::SpriteBuffers;
 pub use crate::renderer::texture::Texture;
 
-#[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
+#[derive(Debug, Default, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
 pub struct Layer(pub isize);
 
 pub type TextureRef = Rc<Texture>;
@@ -181,6 +181,17 @@ impl<'a> RenderContext<'a> {
         let mut sorted_descriptors: Vec<_> = pass_descriptors.iter().collect();
         sorted_descriptors.sort_by_key(|pd| pd.layer);
 
+        if sorted_descriptors.is_empty() {
+            self.encode_pass(
+                &view,
+                &mut encoder,
+                &PassDescriptor {
+                    texture_id: None,
+                    layer: Layer::default(),
+                },
+                0,
+            );
+        }
         for (id, pass_descriptor) in sorted_descriptors.iter().enumerate() {
             self.encode_pass(&view, &mut encoder, &pass_descriptor, id);
         }
@@ -217,11 +228,9 @@ impl<'a> RenderContext<'a> {
         });
         render_pass.set_pipeline(&self.renderer.pipeline.pipeline);
         render_pass.set_bind_group(0, &self.renderer.camera.bind_group, &[]);
-        render_pass.set_bind_group(
-            1,
-            &self.textures[&pass_descriptor.texture_id].bind_group,
-            &[],
-        );
+        if let Some(texture_id) = pass_descriptor.texture_id {
+            render_pass.set_bind_group(1, &self.textures[&texture_id].bind_group, &[]);
+        }
         render_pass.set_vertex_buffer(0, self.renderer.sprite_buffers.vertex.slice(..));
         render_pass.set_vertex_buffer(1, instances_buffer.slice(..));
         render_pass.set_index_buffer(
