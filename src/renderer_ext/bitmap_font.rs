@@ -1,3 +1,5 @@
+use crate::renderer_ext::bitmap_font::MissingCharacterBehaviour::{Panic, Skip};
+use crate::renderer_ext::bitmap_font::SpaceBehaviour::TreatAsCharacter;
 use crate::{Layer, RenderContext, Renderer, Sprite};
 use cgmath::Vector2;
 use std::collections::HashMap;
@@ -24,6 +26,14 @@ pub struct BitmapFontSettings {
     missing_character_behaviour: MissingCharacterBehaviour,
 }
 
+#[derive(Debug, Clone, Default)]
+pub enum TextAlignment {
+    #[default]
+    Left,
+    Center,
+    Right,
+}
+
 #[derive(Debug, Clone)]
 pub struct BitmapFont {
     characters_map: HashMap<char, Sprite>,
@@ -46,27 +56,19 @@ impl BitmapFont {
         }
     }
 
-    fn draw_char(
-        &self,
-        ctx: &mut RenderContext,
-        character: char,
-        position: Vector2<i32>,
-        layer: Layer,
-    ) -> i32 {
-        use MissingCharacterBehaviour::*;
-        use SpaceBehaviour::*;
-
+    fn get_real_char(&self, character: char) -> (Option<char>, i32) {
+        // handle space behaviour
         let (space_replaced_ch, space_skip_draw) = if character == ' ' {
             match self.settings.space_behaviour {
-                TreatAsCharacter => (' ', None),
-                SizedEmptySpace(space) => (' ', Some(space)),
+                SpaceBehaviour::TreatAsCharacter => (' ', None),
+                SpaceBehaviour::SizedEmptySpace(space) => (' ', Some(space)),
                 SpaceBehaviour::DrawOtherCharacter(ch) => (ch, None),
             }
         } else {
             (character, None)
         };
         if let Some(space) = space_skip_draw {
-            return space;
+            return (None, space);
         }
 
         let real_ch = if self.characters_map.contains_key(&space_replaced_ch) {
@@ -86,22 +88,26 @@ impl BitmapFont {
         };
 
         if let Some(ch) = real_ch {
-            self.draw_char_raw(ctx, ch, position, layer)
+            let size = self.characters_map[&ch].get_size().x as i32;
+            (Some(ch), size)
         } else {
-            0
+            (None, 0)
         }
     }
 
-    fn draw_char_raw(
+    fn draw_char(
         &self,
         ctx: &mut RenderContext,
         character: char,
         position: Vector2<i32>,
         layer: Layer,
     ) -> i32 {
-        let sprite = &self.characters_map[&character];
-        ctx.draw_sprite(sprite, position, layer);
-        sprite.get_size().x as i32
+        let (real_ch, space) = self.get_real_char(character);
+        if let Some(ch) = real_ch {
+            let sprite = &self.characters_map[&ch];
+            ctx.draw_sprite(sprite, position, layer);
+        }
+        space
     }
 
     pub fn draw_text(
@@ -110,8 +116,18 @@ impl BitmapFont {
         text: &str,
         position: Vector2<i32>,
         layer: Layer,
+        alignment: TextAlignment,
     ) {
-        let mut current_position = position;
+        use TextAlignment::*;
+        let string_size: i32 = text.chars().map(|ch| self.get_real_char(ch).1).sum();
+        let x_position = position.x
+            - match alignment {
+                Left => 0,
+                Center => string_size / 2,
+                Right => string_size,
+            };
+        let mut current_position = (x_position, position.y).into();
+
         for ch in text.chars() {
             let offset = self.draw_char(ctx, ch, current_position, layer);
             current_position.x += offset;

@@ -1,8 +1,11 @@
+extern crate core;
+
 use crate::renderer::sprite::Sprite;
 use crate::renderer::{Layer, RenderContext, Renderer, TextureRef};
-use crate::renderer_ext::bitmap_font::{BitmapFont, BitmapFontSettings};
+use crate::renderer_ext::bitmap_font::{BitmapFont, BitmapFontSettings, TextAlignment};
 use crate::renderer_ext::sprite::{GridMode, SpriteExt};
 use crate::GridMode::CellSize;
+use crate::Side::Left;
 use cgmath::Vector2;
 use rand::prelude::*;
 use winit::dpi::LogicalSize;
@@ -50,7 +53,7 @@ impl Sprites {
         let font_texture = &renderer.load_texture("sprites/font.png", 2);
         let font_sprite = Sprite::from_whole_texture(font_texture);
         let font_grid = font_sprite.uniform_grid(CellSize((16, 16).into()));
-        let score_font = BitmapFont::new(&font_grid, '0'..'9', BitmapFontSettings::default());
+        let score_font = BitmapFont::new(&font_grid, '0'..='9', BitmapFontSettings::default());
 
         Sprites {
             wall,
@@ -207,7 +210,7 @@ impl Player {
 
         Player {
             side,
-            score: 0,
+            score: 2137,
             palette: Palette {
                 position: (x_palette_position, (600 - PALETTE_SIZE) / 2).into(),
                 side,
@@ -224,12 +227,16 @@ impl Player {
 
         let position_x = match self.side {
             Side::Left => POINTS_SIZE,
-            Side::Right => 800 - 2 * POINTS_SIZE,
+            Side::Right => 800 - POINTS_SIZE,
         };
         let position = (position_x, 600 - 2 * POINTS_SIZE).into();
+        let alignment = match self.side {
+            Side::Left => TextAlignment::Left,
+            Side::Right => TextAlignment::Right,
+        };
         textures
             .score_font
-            .draw_text(ctx, &self.score.to_string(), position, UI_LAYER);
+            .draw_text(ctx, &self.score.to_string(), position, UI_LAYER, alignment);
     }
 
     fn should_score(&self, bounds: Bounds) -> bool {
