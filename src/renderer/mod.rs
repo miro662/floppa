@@ -90,7 +90,7 @@ impl Renderer {
             sprite_buffers,
             pipeline,
             camera,
-            texture_id: 0
+            texture_id: 0,
         })
     }
 

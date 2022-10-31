@@ -1,7 +1,7 @@
+use crate::renderer::Error;
 use cgmath::Vector2;
 use image::io::Reader as ImageReader;
 use image::{DynamicImage, GenericImageView};
-use crate::renderer::Error;
 
 #[derive(Debug)]
 pub struct Texture {
@@ -22,7 +22,13 @@ impl Texture {
     ) -> Result<Texture, Error> {
         let image = ImageReader::open(file_name)?;
         let decoded_image = image.decode().map_err(|_| Error::TextureEncodingError)?;
-        Ok(Self::load_from_image(decoded_image, device, queue, layout, id))
+        Ok(Self::load_from_image(
+            decoded_image,
+            device,
+            queue,
+            layout,
+            id,
+        ))
     }
 
     pub fn load_from_image(

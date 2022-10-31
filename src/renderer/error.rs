@@ -17,8 +17,8 @@ impl fmt::Display for Error {
             RequestDeviceError(err) => write!(f, "Request device error: {}", err),
             SurfaceError(err) => write!(f, "Surface error: {}", err),
             NoDevice => write!(f, "Device not found"),
-            IOError(err)=> write!(f, "IO error: {}", err),
-            TextureEncodingError => write!(f, "Cannot encode texture")
+            IOError(err) => write!(f, "IO error: {}", err),
+            TextureEncodingError => write!(f, "Cannot encode texture"),
         }
     }
 }
