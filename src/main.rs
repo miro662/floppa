@@ -3,6 +3,7 @@ use crate::main_loop::run;
 use std::error::Error;
 
 mod assets;
+mod ball;
 mod game;
 mod main_loop;
 mod renderer;

@@ -6,7 +6,7 @@ use winit::window::Window;
 
 pub trait Game {
     fn create(window: &Window) -> Self;
-    fn steps_per_frame(&self) -> u32;
+    fn steps_per_second(&self) -> u32;
     fn handle_event(&mut self, event: &WindowEvent) -> bool;
     fn update(&mut self);
     fn render(&mut self);
@@ -24,7 +24,7 @@ pub fn run<T: Game + 'static>() {
     window.set_inner_size(LogicalSize::new(800, 600));
     let mut game = <T as Game>::create(&window);
 
-    let steps_per_frame = game.steps_per_frame();
+    let steps_per_frame = game.steps_per_second();
     let mut last_frame_finished = Utc::now();
     let step_duration = Duration::seconds(1) / steps_per_frame as i32;
     let mut non_evaluated_duration = Duration::zero();
