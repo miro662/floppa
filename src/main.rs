@@ -3,6 +3,7 @@ extern crate core;
 use crate::renderer::sprite::Sprite;
 use crate::renderer::{Layer, RenderContext, Renderer, TextureRef};
 use crate::renderer_ext::bitmap_font::{BitmapFont, BitmapFontSettings, TextAlignment};
+use crate::renderer_ext::context_ext::RenderContextExt;
 use crate::renderer_ext::sprite::{GridMode, SpriteExt};
 use crate::GridMode::CellSize;
 use crate::Side::Left;
@@ -234,13 +235,13 @@ impl Player {
             Side::Left => TextAlignment::Left,
             Side::Right => TextAlignment::Right,
         };
-        textures.score_font.draw_text(
-            ctx,
+        ctx.draw_text(
+            &textures.score_font,
+            &alignment,
+            (1, 1).into(),
             &self.score.to_string(),
             position,
             UI_LAYER,
-            &alignment,
-            (1, 1).into(),
         );
     }
 

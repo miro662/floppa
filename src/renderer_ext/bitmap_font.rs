@@ -135,7 +135,7 @@ impl BitmapFont {
         }
     }
 
-    pub fn draw_text(
+    pub(in crate::renderer_ext) fn draw_text(
         &self,
         ctx: &mut RenderContext,
         text: &str,
