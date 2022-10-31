@@ -1,4 +1,5 @@
 use crate::Sprite;
+use std::str::SplitInclusive;
 
 pub enum GridMode {
     CellSize(cgmath::Vector2<u32>),
@@ -7,6 +8,7 @@ pub enum GridMode {
 
 pub trait SpriteExt {
     fn uniform_grid(&self, grid_mode: GridMode) -> Vec<Sprite>;
+    fn non_uniform_grid(&self, rows: &[u32], cols: &[u32]) -> Vec<Sprite>;
 }
 
 impl SpriteExt for Sprite {
@@ -35,6 +37,22 @@ impl SpriteExt for Sprite {
                 let slice = self.slice(cell_size, offset);
                 cells.push(slice)
             }
+        }
+        cells
+    }
+
+    fn non_uniform_grid(&self, rows: &[u32], cols: &[u32]) -> Vec<Sprite> {
+        let mut cells = vec![];
+        let mut offset = (0, 0).into();
+        for row_size in rows {
+            for col_size in cols {
+                let cell_size = (*col_size, *row_size).into();
+                let slice = self.slice(cell_size, offset);
+                cells.push(slice);
+                offset.x += col_size;
+            }
+            offset.x = 0;
+            offset.y += row_size;
         }
         cells
     }

@@ -1,6 +1,7 @@
 use crate::renderer::sprite::Sprite;
 use crate::renderer::{Layer, RenderContext, Renderer, TextureRef};
 use crate::renderer_ext::sprite::{GridMode, SpriteExt};
+use crate::GridMode::CellSize;
 use cgmath::Vector2;
 use rand::prelude::*;
 use winit::dpi::LogicalSize;
@@ -32,6 +33,27 @@ struct Sprites {
     wall: Vec<Sprite>,
 }
 
+impl Sprites {
+    fn load(renderer: &mut Renderer) -> Sprites {
+        let wall_texture = &renderer.load_texture("sprites/wall.png", 0);
+        let wall_sprite = Sprite::from_whole_texture(wall_texture);
+        let wall = wall_sprite.uniform_grid(CellSize((64, 64).into()));
+
+        let sprites_texture = &renderer.load_texture("sprites/sprites.png", 1);
+        let sprites_sprite = Sprite::from_whole_texture(sprites_texture);
+        let palette = sprites_sprite.slice((32, 128).into(), (0, 0).into());
+        let ball = sprites_sprite.slice((32, 32).into(), (32, 0).into());
+        let point = sprites_sprite.slice((16, 16).into(), (32, 32).into());
+
+        Sprites {
+            wall,
+            palette,
+            ball,
+            point,
+        }
+    }
+}
+
 #[derive(Debug)]
 struct Wall {
     ids: [[u32; 10]; 13],
@@ -43,7 +65,7 @@ impl Wall {
         let mut rand = thread_rng();
         for x in 0..13 {
             for y in 0..10 {
-                ids[x][y] = rand.next_u32() % 6;
+                ids[x][y] = rand.next_u32() % 2;
             }
         }
         Wall { ids }
@@ -343,13 +365,7 @@ fn main() {
     let window = Window::new(&ev_loop).unwrap();
     window.set_inner_size(LogicalSize::new(800, 600));
     let mut renderer = Renderer::new(&window);
-    let textures = Sprites {
-        wall: Sprite::from_whole_texture(&renderer.load_texture("sprites/wall.png", 0))
-            .uniform_grid(GridMode::CellSize((64, 64).into())),
-        ball: Sprite::from_whole_texture(&renderer.load_texture("sprites/ball.png", 1)),
-        palette: Sprite::from_whole_texture(&renderer.load_texture("sprites/palette.png", 2)),
-        point: Sprite::from_whole_texture(&renderer.load_texture("sprites/point.png", 3)),
-    };
+    let textures = Sprites::load(&mut renderer);
     let mut state = State::new();
 
     let mut last_frame_finished = chrono::Utc::now();
