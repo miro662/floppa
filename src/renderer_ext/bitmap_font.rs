@@ -110,16 +110,16 @@ impl BitmapFont {
         space
     }
 
-    pub fn draw_text(
+    fn draw_line(
         &self,
         ctx: &mut RenderContext,
-        text: &str,
+        line: &str,
         position: Vector2<i32>,
         layer: Layer,
-        alignment: TextAlignment,
+        alignment: &TextAlignment,
     ) {
         use TextAlignment::*;
-        let string_size: i32 = text.chars().map(|ch| self.get_real_char(ch).1).sum();
+        let string_size: i32 = line.chars().map(|ch| self.get_real_char(ch).1).sum();
         let x_position = position.x
             - match alignment {
                 Left => 0,
@@ -128,9 +128,30 @@ impl BitmapFont {
             };
         let mut current_position = (x_position, position.y).into();
 
-        for ch in text.chars() {
+        for ch in line.chars() {
             let offset = self.draw_char(ctx, ch, current_position, layer);
             current_position.x += offset;
+        }
+    }
+
+    pub fn draw_text(
+        &self,
+        ctx: &mut RenderContext,
+        text: &str,
+        position: Vector2<i32>,
+        layer: Layer,
+        alignment: &TextAlignment,
+    ) {
+        let mut current_position = position;
+        let lines = text.lines();
+        let line_height = text
+            .chars()
+            .next()
+            .and_then(|ch| self.characters_map.get(&ch))
+            .map_or(0, |ch| ch.get_size().y) as i32;
+        for line in lines {
+            self.draw_line(ctx, line, current_position, layer, alignment);
+            current_position.y -= line_height;
         }
     }
 }

@@ -236,7 +236,7 @@ impl Player {
         };
         textures
             .score_font
-            .draw_text(ctx, &self.score.to_string(), position, UI_LAYER, alignment);
+            .draw_text(ctx, &self.score.to_string(), position, UI_LAYER, &alignment);
     }
 
     fn should_score(&self, bounds: Bounds) -> bool {
