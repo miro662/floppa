@@ -234,9 +234,14 @@ impl Player {
             Side::Left => TextAlignment::Left,
             Side::Right => TextAlignment::Right,
         };
-        textures
-            .score_font
-            .draw_text(ctx, &self.score.to_string(), position, UI_LAYER, &alignment);
+        textures.score_font.draw_text(
+            ctx,
+            &self.score.to_string(),
+            position,
+            UI_LAYER,
+            &alignment,
+            (1, 1).into(),
+        );
     }
 
     fn should_score(&self, bounds: Bounds) -> bool {

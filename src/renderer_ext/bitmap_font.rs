@@ -117,6 +117,7 @@ impl BitmapFont {
         position: Vector2<i32>,
         layer: Layer,
         alignment: &TextAlignment,
+        padding: i32,
     ) {
         use TextAlignment::*;
         let string_size: i32 = line.chars().map(|ch| self.get_real_char(ch).1).sum();
@@ -130,7 +131,7 @@ impl BitmapFont {
 
         for ch in line.chars() {
             let offset = self.draw_char(ctx, ch, current_position, layer);
-            current_position.x += offset;
+            current_position.x += offset + padding * 2;
         }
     }
 
@@ -141,6 +142,7 @@ impl BitmapFont {
         position: Vector2<i32>,
         layer: Layer,
         alignment: &TextAlignment,
+        padding: Vector2<i32>,
     ) {
         let mut current_position = position;
         let lines = text.lines();
@@ -150,8 +152,8 @@ impl BitmapFont {
             .and_then(|ch| self.characters_map.get(&ch))
             .map_or(0, |ch| ch.get_size().y) as i32;
         for line in lines {
-            self.draw_line(ctx, line, current_position, layer, alignment);
-            current_position.y -= line_height;
+            self.draw_line(ctx, line, current_position, layer, alignment, padding.x);
+            current_position.y -= line_height + padding.y * 2;
         }
     }
 }
