@@ -1,4 +1,5 @@
 use crate::assets::Assets;
+use crate::collisions::Bounds;
 use crate::game::SCREEN_SIZE;
 use crate::input::{Input, InputAxis};
 use crate::renderer::{color, Layer, RenderContext};
@@ -10,7 +11,7 @@ const INITIAL_PALETTE_POSITION: Vector2<i32> = Vector2 {
     x: SCREEN_SIZE.x / 2,
     y: 16,
 };
-const PALETTE_VELOCITY: Vector2<i32> = Vector2 { x: 4, y: 0 };
+const PALETTE_VELOCITY: Vector2<i32> = Vector2 { x: 3, y: 0 };
 
 pub struct Palette {
     position: Vector2<i32>,
@@ -30,13 +31,20 @@ impl Palette {
     }
 
     pub fn update(&mut self, input: &mut Input) {
+        self.handle_movement(input);
+        self.constrain_position();
+    }
+
+    fn handle_movement(&mut self, input: &mut Input) {
         if input.get_axis(&InputAxis::PaletteLeft) {
             self.position -= PALETTE_VELOCITY;
         }
         if input.get_axis(&InputAxis::PaletteRight) {
             self.position += PALETTE_VELOCITY;
         }
+    }
 
+    fn constrain_position(&mut self) {
         if self.position.x < (self.size().x / 2) {
             self.position.x = self.size().x / 2;
         } else if self.position.x > (SCREEN_SIZE.x - self.size().x / 2) {
@@ -56,6 +64,13 @@ impl Palette {
             };
             let position = initial_position + i * tile_offset;
             ctx.draw_sprite(sprite, position, Layer(0), color::WHITE)
+        }
+    }
+
+    pub fn bounds(&self) -> Bounds {
+        Bounds {
+            position: self.position,
+            size: self.size(),
         }
     }
 }

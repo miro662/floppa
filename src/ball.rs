@@ -1,4 +1,5 @@
 use crate::assets::Assets;
+use crate::collisions::Bounds;
 use crate::game::SCREEN_SIZE;
 use crate::renderer::{color, Layer, RenderContext};
 use cgmath::Vector2;
@@ -61,5 +62,17 @@ impl Ball {
             self.position.y = top_edge - (self.position.y - top_edge);
             self.velocity.y = -self.velocity.y;
         }
+    }
+
+    pub fn bounds(&self) -> Bounds {
+        Bounds {
+            position: self.position,
+            size: BALL_SIZE,
+        }
+    }
+
+    pub fn handle_collision(&mut self, bounds: &Bounds) {
+        self.position.y -= bounds.size.y;
+        self.velocity.y = -self.velocity.y;
     }
 }

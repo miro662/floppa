@@ -49,6 +49,11 @@ impl Game for Arkanoid {
     fn update(&mut self) {
         self.ball.update();
         self.palette.update(&mut self.input);
+
+        let ball_palette_collision = self.ball.bounds().overlap(&self.palette.bounds());
+        if let Some(bounds) = ball_palette_collision {
+            self.ball.handle_collision(&bounds);
+        }
     }
 
     fn render(&mut self) {

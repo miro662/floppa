@@ -4,6 +4,7 @@ use std::error::Error;
 
 mod assets;
 mod ball;
+mod collisions;
 mod game;
 mod input;
 mod main_loop;
