@@ -5,6 +5,7 @@ use std::error::Error;
 mod assets;
 mod ball;
 mod game;
+mod input;
 mod main_loop;
 mod palette;
 mod renderer;
