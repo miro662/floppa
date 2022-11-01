@@ -5,7 +5,10 @@ use cgmath::Vector2;
 
 const BALL_SIZE: Vector2<i32> = Vector2 { x: 16, y: 16 };
 const BALL_LAYER: Layer = Layer(0);
-const BALL_INITIAL_POSITION: Vector2<i32> = Vector2 { x: 400, y: 300 };
+const BALL_INITIAL_POSITION: Vector2<i32> = Vector2 {
+    x: 400 - BALL_SIZE.x / 2,
+    y: 300 - BALL_SIZE.y / 2,
+};
 const BALL_INITIAL_VELOCITY: Vector2<i32> = Vector2 { x: 2, y: 2 };
 
 pub struct Ball {

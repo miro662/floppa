@@ -6,6 +6,7 @@ mod assets;
 mod ball;
 mod game;
 mod main_loop;
+mod palette;
 mod renderer;
 mod renderer_ext;
 

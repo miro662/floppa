@@ -1,6 +1,7 @@
 use crate::assets::Assets;
 use crate::ball::Ball;
 use crate::main_loop::Game;
+use crate::palette::Palette;
 use crate::renderer::color::Color;
 use crate::renderer::{color, Layer, Renderer};
 use cgmath::Vector2;
@@ -15,6 +16,7 @@ pub struct Arkanoid {
     assets: Assets,
 
     ball: Ball,
+    palette: Palette,
 }
 
 impl Game for Arkanoid {
@@ -23,10 +25,12 @@ impl Game for Arkanoid {
         let assets = Assets::load(&mut renderer);
 
         let ball = Ball::new();
+        let palette = Palette::new();
         Arkanoid {
             renderer,
             assets,
             ball,
+            palette,
         }
     }
 
@@ -52,6 +56,7 @@ impl Game for Arkanoid {
                     a: 1.0,
                 });
                 self.ball.render(ctx, &self.assets);
+                self.palette.render(ctx, &self.assets);
             })
             .unwrap()
     }
