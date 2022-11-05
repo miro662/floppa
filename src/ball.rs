@@ -10,7 +10,7 @@ const BALL_INITIAL_POSITION: Vector2<i32> = Vector2 {
     x: 400 - BALL_SIZE.x / 2,
     y: 300 - BALL_SIZE.y / 2,
 };
-const BALL_INITIAL_VELOCITY: Vector2<i32> = Vector2 { x: 2, y: 2 };
+const BALL_INITIAL_VELOCITY: Vector2<i32> = Vector2 { x: 4, y: 4 };
 
 pub struct Ball {
     position: Vector2<i32>,
@@ -71,8 +71,18 @@ impl Ball {
         }
     }
 
-    pub fn handle_collision(&mut self, bounds: &Bounds) {
-        self.position.y -= bounds.size.y;
-        self.velocity.y = -self.velocity.y;
+    pub fn handle_collision(&mut self, bounds: &Bounds) -> bool {
+        println!("{:?}", bounds);
+        let vertical_collision = bounds.size.y <= bounds.size.x;
+        let horizontal_collision = bounds.size.x <= bounds.size.y;
+        if vertical_collision {
+            self.position.y -= bounds.size.y * self.velocity.y.signum();
+            self.velocity.y = -self.velocity.y;
+        }
+        if horizontal_collision {
+            self.position.x -= bounds.size.x * self.velocity.x.signum();
+            self.velocity.x = -self.velocity.x;
+        }
+        bounds.size.x > 0 && bounds.size.y > 0
     }
 }

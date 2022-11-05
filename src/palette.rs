@@ -45,16 +45,16 @@ impl Palette {
     }
 
     fn constrain_position(&mut self) {
-        if self.position.x < (self.size().x / 2) {
-            self.position.x = self.size().x / 2;
-        } else if self.position.x > (SCREEN_SIZE.x - self.size().x / 2) {
-            self.position.x = SCREEN_SIZE.x - self.size().x / 2;
+        if self.position.x < 0 {
+            self.position.x = 0;
+        } else if self.position.x > (SCREEN_SIZE.x - self.size().x) {
+            self.position.x = SCREEN_SIZE.x - self.size().x;
         }
     }
 
     pub fn render(&self, ctx: &mut RenderContext, assets: &Assets) {
         let initial_position: Vector2<i32> =
-            (self.position.x - (self.size().x / 2), self.position.y).into();
+            (self.position.x, self.position.y).into();
         let tile_offset: Vector2<i32> = (PALETTE_CELL_SIZE.x, 0).into();
         for i in 0..self.size {
             let sprite = match i {

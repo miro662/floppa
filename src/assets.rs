@@ -5,6 +5,7 @@ use crate::renderer_ext::sprite::{GridMode, SpriteExt};
 pub struct Assets {
     pub ball: Sprite,
     pub palette: Vec<Sprite>,
+    pub block: Sprite,
 }
 
 impl Assets {
@@ -15,6 +16,7 @@ impl Assets {
                 .load_sprite("sprites/palette.png")
                 .unwrap()
                 .uniform_grid(GridMode::CellSize((16, 16).into())),
+            block: renderer.load_sprite("sprites/block.png").unwrap()
         }
     }
 }

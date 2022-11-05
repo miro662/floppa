@@ -11,6 +11,7 @@ mod main_loop;
 mod palette;
 mod renderer;
 mod renderer_ext;
+mod block;
 
 fn main() -> Result<(), Box<dyn Error>> {
     env_logger::init();
